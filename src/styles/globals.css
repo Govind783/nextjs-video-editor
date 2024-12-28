@@ -7,7 +7,6 @@
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;
 }
-
 @media (prefers-color-scheme: dark) {
   :root {
     --foreground-rgb: 255, 255, 255;
@@ -30,4 +29,99 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+}
+
+@layer base {
+  :root {
+    --radius: 0.5rem;
+  }
+}
+
+
+/* .scrollarea-custom {
+  --scrollbar-size: 10px;
+  overflow: hidden;
+  border-radius: 4px;
+} */
+
+.scrollarea-custom [data-radix-scroll-area-thumb] {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.scrollarea-custom [data-radix-scroll-area-scrollbar] {
+  padding: 2px;
+  background: transparent;
+}
+
+/* globals.css */
+/* .scrollarea-custom {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+} */
+
+.scrollarea-custom [data-radix-scroll-area-viewport] {
+  width: 100%;
+  height: 100%;
+}
+
+/* Customize scrollbar */
+.scrollarea-custom [data-radix-scroll-area-scrollbar] {
+  display: flex;
+  height: 10px;
+  touch-action: none;
+  user-select: none;
+  background: #1a1a1a;
+}
+
+.scrollarea-custom [data-radix-scroll-area-thumb] {
+  flex: 1;
+  background: #333;
+  border-radius: 4px;
+  position: relative;
+}
+
+/* the 4 rouded circles at the end of the video gramme */
+.rCSn38o69 .moveable-control{
+  background-color: rgb(0, 0, 0) !important;
+  width: 18px !important;
+  height: 18px !important;
+}
+
+/* the rotating buton on canvas */
+.rCSn38o69 .moveable-rotation .moveable-rotation-control{
+  width: 11px !important;
+  height: 11px !important;
+}
+
+
+/* the frme around video that appeafrs on selec */
+.moveable-line {
+  pointer-events: none !important;
+  height: 1.5px !important;
+  background: #fff !important;
+}
+
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+.ScrollAreaViewport {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  opacity: 0;
 }
