@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 // import { Slider } from "@/components/ui/slider";
 import { Play, Pause, SkipBack, SkipForward, Undo, Redo, Clock, ZoomIn, ZoomOut } from "lucide-react";
@@ -71,15 +71,26 @@ const Header = memo(() => {
   const videos = useVideoStore((state) => state.videos);
   // const toggleVideoPlayback = useVideoStore((state) => state.toggleVideoPlayback);
   const toggleVideoPlayback = useVideoStore((state) => state.toggleVideoPlayback);
+  const isVideoPlaying = useVideoStore((state) => state.isVideoPlaying)
+
+  const [duration, setDuratrion] = useState(0);
+  useEffect(() => {
+    let maxDuartion = 0;
+    for (let i = 0; i < videos.length; i++) {
+      if (videos[i].duration > maxDuartion) {
+        maxDuartion = videos[i].duration;
+        setDuratrion(videos[i].duration);
+      }
+    }
+  }, [videos.length]);
 
   const handlePlayPause = () => {
     const videoElements = document.querySelectorAll("video");
-    const shouldPlay = !videos[0]?.isPlaying;
+    const shouldPlay = !isVideoPlaying;
+    // const maxDuration = useVideoStore.getState().duration;
+    videoElements.forEach((videoEl) => {
 
-    videoElements.forEach((videoEl, index) => {
-      //  play if the video hasn't reached its end
       if (shouldPlay) {
-        //  if video hasn't reached its end before playing
         if (videoEl.currentTime < videoEl.duration) {
           videoEl.play();
         }
@@ -87,9 +98,9 @@ const Header = memo(() => {
         videoEl.pause();
       }
     });
-
+   
     toggleVideoPlayback();
-  };
+   };
 
   // const currentVideo = videos.find((video) => video.id === currentVideoId);
 
@@ -104,14 +115,14 @@ const Header = memo(() => {
         </Button>
       </div> */}
 
-      <div className="flex items-center justify-center relative ">
+      <div className="flex items-center left-16 justify-center relative ">
         <div className="flex items-center space-x-2">
           <div className="w-px h-4 bg-border" />
           <Button variant="ghost" size="icon" className="w-8 h-8">
             <SkipBack className="w-4 h-4" />
           </Button>
           <Button variant="ghost" size="icon" className="w-8 h-8" onClick={handlePlayPause}>
-            {videos[0]?.isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+            {isVideoPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
           </Button>
           {/* <Button variant="ghost" size="icon" className="w-8 h-8" onClick={handlePlayPause}>
             {currentVideo?.isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}

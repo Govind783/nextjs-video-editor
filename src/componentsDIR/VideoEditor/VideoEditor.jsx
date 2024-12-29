@@ -22,7 +22,9 @@ const VideoEditor = () => {
   const videos = useVideoStore((state) => state.videos);
   const setPlayerRef = useVideoStore((state) => state.setPlayerRef);
   const currentVideoId = useVideoStore((state) => state.currentVideoId);
-  const videoRefs = useRef({}); 
+  const videoRefs = useRef({});
+  const toggleVideoPlayback = useVideoStore((state) => state.toggleVideoPlayback)
+  const currentTime = useVideoStore((state) => state.currentTime);
 
   useEffect(() => {
     if (currentVideoId && videoRefs.current[currentVideoId]) {
@@ -35,7 +37,6 @@ const VideoEditor = () => {
   useEffect(() => {
     if (!viewerRef.current) return;
 
-  
     const selection = new Selection({
       container: viewerRef.current.infiniteViewer.getContainer(),
       boundContainer: true,
@@ -60,28 +61,37 @@ const VideoEditor = () => {
 
   const setCurrentTime = useVideoStore((state) => state.setCurrentTime);
 
-  useEffect(() => {
-    const handleTimeUpdate = () => {
-      /// NOTE, when u add ur trimand edit functionality u will have to notify or re reun this effect coz maybe the video was suposedly the longest just got trimmed and now a second video is tyhe longest, so u will have to update ur variables again
+useEffect(() => {
+  const handleTimeUpdate = () => {
+     /// NOTE, when u add ur trimand edit functionality u will have to notify or re reun this effect coz maybe the video was suposedly the longest just got trimmed and now a second video is tyhe longest, so u will have to update ur variables again
       // Find the longest video
-      const longestVideo = videos.reduce((max, video) => (video.duration > max.duration ? video : max), videos[0]);
-
-      if (longestVideo) {
-        setCurrentTime(videoRefs.current[longestVideo.id].currentTime);
-      }
-    };
-
-    //  listener to longest video only
-    const longestVideo = videos.reduce((max, video) => (video.duration > max.duration ? video : max), videos[0]);
-
-    const longestVideoRef = videoRefs.current[longestVideo?.id];
-    if (longestVideoRef) {
-      longestVideoRef.addEventListener("timeupdate", handleTimeUpdate);
-      return () => {
-        longestVideoRef.removeEventListener("timeupdate", handleTimeUpdate);
-      };
+    const longestVideo = videos.reduce((max, video) => 
+      video.duration > max.duration ? video : max, videos[0]
+    );
+  
+    if (longestVideo && videoRefs.current[longestVideo.id]) {
+      setCurrentTime(videoRefs.current[longestVideo.id].currentTime);
     }
-  }, [videos, setCurrentTime]);
+  };
+
+  const handleVideoEnd = () => {
+    toggleVideoPlayback({ isVideoPlaying: false });
+  };
+
+  const longestVideo = videos.reduce((max, video) => 
+    video.duration > max.duration ? video : max, videos[0]
+  );
+
+  const longestVideoRef = videoRefs.current[longestVideo?.id];
+  if (longestVideoRef) {
+    longestVideoRef.addEventListener("timeupdate", handleTimeUpdate);
+    longestVideoRef.addEventListener("ended", handleVideoEnd);
+    return () => {
+      longestVideoRef.removeEventListener("timeupdate", handleTimeUpdate);
+      longestVideoRef.removeEventListener("ended", handleVideoEnd); 
+    };
+  }
+}, [videos, setCurrentTime]);
 
 
   useEffect(() => {
@@ -143,38 +153,42 @@ const VideoEditor = () => {
                   }}
                 >
                   <div className="flex justify-center p-8 pt-16">
-                    {videos.map((item, index) => (
-                      <div
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setCurrentVideoId(item.id);
-                          setIsVideoSelected(item.id);
-                        }}
-                        data-video-id={item.id}
-                        key={index}
-                        className="video-item"
-                        style={{ position: "absolute" }}
-                      >
-                        <video
-                          ref={(el) => {
-                            if (el) {
-                              videoRefs.current[item.id] = el;
-                              if (item.id === currentVideoId) {
-                                setPlayerRef(el);
-                              }
-                            }
+                    {videos.map((item, index) => {
+                      return (
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCurrentVideoId(item.id);
+                            setIsVideoSelected(item.id);
                           }}
-                          onTimeUpdate={() => {
-                            if (item.id === currentVideoId) {
-                              setCurrentTime(videoRefs.current[item.id].currentTime);
-                            }
-                          }}
-                          style={{ width: "100%", height: "100%" }}
-                          className="rounded-md"
-                          src={item.src}
-                        />
-                      </div>
-                    ))}
+                          data-video-id={item.id}
+                          key={index}
+                          className="video-item"
+                          style={{ position: "absolute" }}
+                        >
+                          {item.duration >= currentTime && ( // here is it >= coz if u just do > then it removes the video form the dom, not the best solution but for now fine, TODO fix later this is more for a situation when the video ends and the guy presses on play again
+                            <video
+                              ref={(el) => {
+                                if (el) {
+                                  videoRefs.current[item.id] = el;
+                                  // IMPORTANT: set playerRef to longest video's ref
+                                  const longestVideo = videos.reduce(
+                                    (max, v) => (v.duration > max.duration ? v : max),
+                                    videos[0]
+                                  );
+                                  if (item.id === longestVideo.id) {
+                                    setPlayerRef(el);
+                                  }
+                                }
+                              }}
+                              style={{ width: "100%", height: "100%" }}
+                              className="rounded-md"
+                              src={item.src}
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
 
                   <Moveable

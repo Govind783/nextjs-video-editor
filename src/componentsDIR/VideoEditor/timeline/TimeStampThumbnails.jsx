@@ -189,6 +189,7 @@ const PlayheadPosition = memo(({ scrollLeft }) => {
   const [dragStartPosition, setDragStartPosition] = useState(0);
   const [localPosition, setLocalPosition] = useState(0);
   const [initialClientX, setInitialClientX] = useState(0);
+  const videos = useVideoStore((state) => state.videos);
 
   const handlePositionChange = useCallback(
     (newPosition) => {
@@ -215,16 +216,26 @@ const PlayheadPosition = memo(({ scrollLeft }) => {
         const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
         const delta = clientX - initialClientX;
         const newPosition = dragStartPosition + delta;
-        setLocalPosition(newPosition);
-
-        // Update time calculation to use FPS
+        
         const time = (newPosition + scrollLeft) / (FPS * scale.zoom * 60);
-        if (playerRef) {
-          playerRef.currentTime = time;
+        
+        // only update if we're within valid bounds for ANY video
+        const isValidTime = videos.some(video => time <= video.duration);
+        
+        if (isValidTime) {
+          setLocalPosition(newPosition);
+          // Find longest video that contains this time point
+          const targetVideo = videos
+            .filter(v => time <= v.duration)
+            .reduce((max, video) => video.duration > max.duration ? video : max, videos[0]);
+            
+          if (targetVideo && playerRef) {
+            playerRef.currentTime = time;
+          }
         }
       }
     },
-    [isDragging, initialClientX, dragStartPosition, scrollLeft, scale.zoom, playerRef]
+    [isDragging, initialClientX, dragStartPosition, scrollLeft, scale.zoom, playerRef, videos]
   );
 
   const handleMouseUp = useCallback(() => {

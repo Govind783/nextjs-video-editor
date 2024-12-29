@@ -13,13 +13,14 @@ export const useVideoStore = create((set, get) => ({
     segments: 10, // Number of segments between major markers
     pixelsPerSecond: 60,
   },
-  duration: 0, // the total video lenght in s
+  duration: 0, // the duration of the longest video, so u uploaed 4 videoes 1min, 4min and 10mins long, duration would be 10mins in seconmds
   currentTime: 0, // this updates based on the duration of the longest video so lets say 240s were todtal u play for 1min, then this becomes 60
   fps: 30,
   // scrollLeft: 0, /// dont need this  (for now, or maybe forevver, made this state local and it does work, so idk maybe delete, keep for now)
 
   isDragging: false,
   playerRef: null,
+  isVideoPlaying: false, // one single bool for deciing if video is playing or not, we dont need diff states for diff videos lets keep one single bool/state which will be linked to the longest video
 
   setScale: (newScale) =>
     set((state) => ({
@@ -67,10 +68,11 @@ export const useVideoStore = create((set, get) => ({
   setIsVideoSelected: (id) => set({ isVideoSelected: id }),
   toggleVideoPlayback: () => {
     set((state) => ({
-      videos: state.videos.map((video) => ({
-        ...video,
-        isPlaying: !state.videos[0].isPlaying, // Use first video's state as reference
-      })),
+      isVideoPlaying: !state.isVideoPlaying
+      // videos: state.videos.map((video) => ({
+      //   ...video,
+      //   isPlaying: !state.videos[0].isPlaying, // Use first video's state as reference
+      // })),
     }));
   },
 
@@ -92,6 +94,14 @@ export const useVideoStore = create((set, get) => ({
       })),
     }));
   },
+  updateVideoTimes: (id, times) =>
+    set((state) => ({
+      videos: state.videos.map((v) =>
+        v.id === id
+          ? { ...v, ...times }
+          : v
+      ),
+    })),
   // toggleVideoPlayback: (videoId) =>
   //   set((state) => ({
   //     videos: state.videos.map((video) => (video.id === videoId ? { ...video, isPlaying: !video.isPlaying } : video)),

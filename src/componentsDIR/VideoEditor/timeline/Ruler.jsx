@@ -14,6 +14,7 @@ const RulerCanvas = memo(({ scrollLeft, scale, onClick }) => {
     height: RULER_HEIGHT
   });
 
+  const videos = useVideoStore((state) => state.videos);
   const resize = (canvas, context, scrollPos) => {
     if (!canvas || !context) return;
 
@@ -114,7 +115,7 @@ const RulerCanvas = memo(({ scrollLeft, scale, onClick }) => {
       const context = canvas.getContext("2d");
       resize(canvas, context, scrollLeft);
     }
-  }, [scrollLeft, scale]);
+  }, [scrollLeft, scale, videos.length]);
 
   const handleClick = (event) => {
     const canvas = canvasRef.current;
