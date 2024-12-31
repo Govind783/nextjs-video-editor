@@ -23,14 +23,14 @@ const VideoEditor = () => {
   const setPlayerRef = useVideoStore((state) => state.setPlayerRef);
   const currentVideoId = useVideoStore((state) => state.currentVideoId);
   const videoRefs = useRef({});
-  const toggleVideoPlayback = useVideoStore((state) => state.toggleVideoPlayback)
+  const toggleVideoPlayback = useVideoStore((state) => state.toggleVideoPlayback);
   const currentTime = useVideoStore((state) => state.currentTime);
 
   useEffect(() => {
     if (currentVideoId && videoRefs.current[currentVideoId]) {
       setPlayerRef(videoRefs.current[currentVideoId]);
     }
-  }, [currentVideoId, setPlayerRef]);
+  }, [currentVideoId, videos]);
 
   const { zoom } = useZoom(containerRef, viewerRef);
 
@@ -61,38 +61,48 @@ const VideoEditor = () => {
 
   const setCurrentTime = useVideoStore((state) => state.setCurrentTime);
 
-useEffect(() => {
-  const handleTimeUpdate = () => {
-     /// NOTE, when u add ur trimand edit functionality u will have to notify or re reun this effect coz maybe the video was suposedly the longest just got trimmed and now a second video is tyhe longest, so u will have to update ur variables again
-      // Find the longest video
-    const longestVideo = videos.reduce((max, video) => 
-      video.duration > max.duration ? video : max, videos[0]
-    );
-  
-    if (longestVideo && videoRefs.current[longestVideo.id]) {
-      setCurrentTime(videoRefs.current[longestVideo.id].currentTime);
-    }
-  };
+  useEffect(() => {
+    /// NOTE, when u add ur trimand edit functionality u will have to notify or re reun this effect coz maybe the video was suposedly the longest just got trimmed and now a second video is tyhe longest, so u will have to update ur variables again
+    // Find the longest video
+    const handleTimeUpdate = () => {
+      const longestVideo = videos.reduce((max, video) => (video.duration > max.duration ? video : max), videos[0]);
 
-  const handleVideoEnd = () => {
-    toggleVideoPlayback({ isVideoPlaying: false });
-  };
+      if (longestVideo && videoRefs.current[longestVideo.id]) {
+        const videoElement = videoRefs.current[longestVideo.id];
+        const { endTime } = videos.find((v) => v.id === longestVideo.id) || {};
 
-  const longestVideo = videos.reduce((max, video) => 
-    video.duration > max.duration ? video : max, videos[0]
-  );
+        setCurrentTime(videoElement.currentTime);
 
-  const longestVideoRef = videoRefs.current[longestVideo?.id];
-  if (longestVideoRef) {
-    longestVideoRef.addEventListener("timeupdate", handleTimeUpdate);
-    longestVideoRef.addEventListener("ended", handleVideoEnd);
-    return () => {
-      longestVideoRef.removeEventListener("timeupdate", handleTimeUpdate);
-      longestVideoRef.removeEventListener("ended", handleVideoEnd); 
+        if (endTime !== undefined && videoElement.currentTime >= endTime) {
+          videoElement.pause();
+          toggleVideoPlayback({ isVideoPlaying: false });
+        }
+      }
     };
-  }
-}, [videos, setCurrentTime]);
 
+    const handleVideoEnd = () => {
+      toggleVideoPlayback({ isVideoPlaying: false });
+    };
+
+    const longestVideo = videos.reduce((max, video) => (video.duration > max.duration ? video : max), videos[0]);
+
+    const longestVideoRef = videoRefs.current[longestVideo?.id];
+    if (longestVideoRef) {
+      // Set the startTime when the video is initialized
+      const { startTime } = videos.find((v) => v.id === longestVideo.id) || {};
+      if (startTime !== undefined) {
+        longestVideoRef.currentTime = startTime;
+      }
+
+      longestVideoRef.addEventListener("timeupdate", handleTimeUpdate);
+      longestVideoRef.addEventListener("ended", handleVideoEnd);
+
+      return () => {
+        longestVideoRef.removeEventListener("timeupdate", handleTimeUpdate);
+        longestVideoRef.removeEventListener("ended", handleVideoEnd);
+      };
+    }
+  }, [videos]);
 
   useEffect(() => {
     if (!selectionRef.current) return;

@@ -1,9 +1,11 @@
 import { memo, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 // import { Slider } from "@/components/ui/slider";
-import { Play, Pause, SkipBack, SkipForward, Undo, Redo, Clock, ZoomIn, ZoomOut } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Undo, Redo, Clock, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { useVideoStore } from "@/State/store";
 import { formatTime, formatTimelineUnit } from "@/helpers/formatTime";
+import UniversalTooltip from "@/components/ui/UniversalTooltip";
+
 // import { debounce, throttle } from "lodash";
 
 const TimeDisplay = memo(() => {
@@ -71,7 +73,7 @@ const Header = memo(() => {
   const videos = useVideoStore((state) => state.videos);
   // const toggleVideoPlayback = useVideoStore((state) => state.toggleVideoPlayback);
   const toggleVideoPlayback = useVideoStore((state) => state.toggleVideoPlayback);
-  const isVideoPlaying = useVideoStore((state) => state.isVideoPlaying)
+  const isVideoPlaying = useVideoStore((state) => state.isVideoPlaying);
 
   const [duration, setDuratrion] = useState(0);
   useEffect(() => {
@@ -82,14 +84,13 @@ const Header = memo(() => {
         setDuratrion(videos[i].duration);
       }
     }
-  }, [videos.length]);
+  }, [videos]);
 
   const handlePlayPause = () => {
     const videoElements = document.querySelectorAll("video");
     const shouldPlay = !isVideoPlaying;
     // const maxDuration = useVideoStore.getState().duration;
     videoElements.forEach((videoEl) => {
-
       if (shouldPlay) {
         if (videoEl.currentTime < videoEl.duration) {
           videoEl.play();
@@ -98,14 +99,17 @@ const Header = memo(() => {
         videoEl.pause();
       }
     });
-   
-    toggleVideoPlayback();
-   };
 
+    toggleVideoPlayback();
+  };
+
+  const resetBackAllVideos = useVideoStore((state) => state.resetBackAllVideos);
+  const forwardVideo = useVideoStore((state) => state.forwardVideo);
+  const revindVideo = useVideoStore((state) => state.rewindVideo);
   // const currentVideo = videos.find((video) => video.id === currentVideoId);
 
   return (
-    <div className="flex items-center justify-center h-12 gap-20">
+    <div className="flex items-center justify-between pl-7 pr-20 h-12 gap-20">
       {/* <div className="flex items-center space-x-2 px-12 min-w-[240px]">
         <Button variant="ghost" size="icon" className="w-8 h-8">
           <Undo className="w-4 h-4" />
@@ -115,32 +119,48 @@ const Header = memo(() => {
         </Button>
       </div> */}
 
-      <div className="flex items-center left-16 justify-center relative ">
-        <div className="flex items-center space-x-2">
-          <div className="w-px h-4 bg-border" />
-          <Button variant="ghost" size="icon" className="w-8 h-8">
-            <SkipBack className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="w-8 h-8" onClick={handlePlayPause}>
-            {isVideoPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-          </Button>
-          {/* <Button variant="ghost" size="icon" className="w-8 h-8" onClick={handlePlayPause}>
-            {currentVideo?.isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-          </Button> */}
-          <Button variant="ghost" size="icon" className="w-8 h-8">
-            <SkipForward className="w-4 h-4" />
-          </Button>
-          <div className="w-px h-4 bg-border" />
-        </div>
-      </div>
-
-      <div className="flex items-center justify-end space-x-4">
+      <div className="flex items-center justify-end space-x-4 relative left-8">
         <div className="flex items-center space-x-2">
           <Clock className="w-4 h-4 text-muted-foreground" />
           <TimeDisplay />
         </div>
         {/* <ZoomControls /> */}
       </div>
+
+      <div className="flex items-center justify-center relative -left-6">
+        <div className="flex items-center space-x-2">
+          <div className="w-px h-4 bg-border" />
+          <UniversalTooltip
+            trigger={
+              <Button onClick={revindVideo} variant="ghost" size="icon" className="w-8 h-8">
+                <SkipBack className="w-4 h-4" />
+              </Button>
+            }
+            content="Rewind 10 seconds"
+          />
+          <Button variant="ghost" size="icon" className="w-8 h-8" onClick={handlePlayPause}>
+            {isVideoPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+          </Button>
+          <UniversalTooltip
+            trigger={
+              <Button onClick={forwardVideo} variant="ghost" size="icon" className="w-8 h-8">
+                <SkipForward className="w-4 h-4" />
+              </Button>
+            }
+            content="Forward 10 seconds"
+          />
+          <div className="w-px h-4 bg-border" />
+        </div>
+      </div>
+
+      <UniversalTooltip
+        trigger={
+          <div onClick={resetBackAllVideos}>
+            <RotateCcw />
+          </div>
+        }
+        content="Rest duraions of all videos"
+      />
     </div>
   );
 });

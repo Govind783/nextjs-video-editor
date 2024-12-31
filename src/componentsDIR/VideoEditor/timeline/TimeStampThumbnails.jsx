@@ -212,23 +212,27 @@ const PlayheadPosition = memo(({ scrollLeft }) => {
   const handleMouseMove = useCallback(
     (e) => {
       if (isDragging) {
+        // impt, you drag the playhead, it updates the video's currentTime, this is the key line  playerRef.currentTime = time; and since ur updating the player ref over here
+        //         // it updates the player ref in the zustand store also
+        //         // and this gives u that effeect that ohh as u fast forward tumbnails are generated in real time, but thats not the case, since the video is fully loaded in momeory (not the best way to do this though)
+        //         // since the video sits on client side in memory, as u drag and forward the pin, the browser automatically changes the video time frames
         e.preventDefault();
         const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
         const delta = clientX - initialClientX;
         const newPosition = dragStartPosition + delta;
-        
+
         const time = (newPosition + scrollLeft) / (FPS * scale.zoom * 60);
-        
+
         // only update if we're within valid bounds for ANY video
-        const isValidTime = videos.some(video => time <= video.duration);
-        
+        const isValidTime = videos.some((video) => time <= video.duration);
+
         if (isValidTime) {
           setLocalPosition(newPosition);
           // Find longest video that contains this time point
           const targetVideo = videos
-            .filter(v => time <= v.duration)
-            .reduce((max, video) => video.duration > max.duration ? video : max, videos[0]);
-            
+            .filter((v) => time <= v.duration)
+            .reduce((max, video) => (video.duration > max.duration ? video : max), videos[0]);
+
           if (targetVideo && playerRef) {
             playerRef.currentTime = time;
           }

@@ -34,16 +34,17 @@ export const useVideoStore = create((set, get) => ({
 
   addVideo: (videoData) => {
     // const MAX_DURATION = 1800;
-    const MAX_DURATION = 1500 // 1800 can be handled but for safe side im doing 1500
+    const MAX_DURATION = 1500; // 1800 can be handled but for safe side im doing 1500
 
     if (videoData.duration > MAX_DURATION) {
-      return false
+      return false;
     }
 
     // this liomit is needed rn bcoz browsers have a hard limit on = 16384px of canvas width and hence u cannot zoom in zoom out till the last second and hence i also commented out the zoom in zoom out thig, todo work on thjis later
     const newVideo = {
       id: uuidv4(),
       src: URL.createObjectURL(videoData.videoBlob),
+      originalDuration: videoData.duration,
       duration: videoData.duration,
       startTime: videoData.startTime || 0,
       endTime: videoData.endTime || videoData.duration,
@@ -68,7 +69,7 @@ export const useVideoStore = create((set, get) => ({
   setIsVideoSelected: (id) => set({ isVideoSelected: id }),
   toggleVideoPlayback: () => {
     set((state) => ({
-      isVideoPlaying: !state.isVideoPlaying
+      isVideoPlaying: !state.isVideoPlaying,
       // videos: state.videos.map((video) => ({
       //   ...video,
       //   isPlaying: !state.videos[0].isPlaying, // Use first video's state as reference
@@ -98,10 +99,68 @@ export const useVideoStore = create((set, get) => ({
     set((state) => ({
       videos: state.videos.map((v) =>
         v.id === id
-          ? { ...v, ...times }
+          ? {
+              ...v,
+              ...times,
+            }
           : v
       ),
     })),
+
+  resetBackAllVideos: () => {
+    set((state) => {
+      const newVideos = state.videos.map((v) => {
+        return {
+          ...v,
+          startTime: 0,
+          endTime: v.originalDuration,
+          duration: v.originalDuration,
+        };
+      });
+      return {
+        videos: newVideos,
+        duration: Math.max(...newVideos.map((i) => i.originalDuration)),
+      };
+    });
+  },
+
+  // reason we cannot simply use this and need to update and rey on ref is bcoz in the VideoEditor comp, we are updating the current time, so if we update the curentTime from header on click, along with the editor component always updating it thers a clash and a race condition as 2 compoennts are trying to update the same thing at the same time
+  // forwardVideo: () => {
+  //   set((state) => {
+  //     return {
+  //       currentTime: Math.min(state.currentTime + 10, state.duration),
+  //     };
+  //   });
+  // },
+
+  forwardVideo: () => {
+    set((state) => {
+
+      const newTime = Math.min(state.currentTime + 10, state.duration);
+
+      if (state.playerRef) {
+        state.playerRef.currentTime = newTime;
+      }
+
+      return {
+        currentTime: newTime,
+      };
+    });
+  },
+
+  rewindVideo: () => {
+    set((state) => {
+      const newTime = Math.max(state.currentTime - 10, 0);
+
+      if (state.playerRef) {
+        state.playerRef.currentTime = newTime;
+      }
+      return {
+        currentTime: newTime,
+      };
+    });
+  },
+
   // toggleVideoPlayback: (videoId) =>
   //   set((state) => ({
   //     videos: state.videos.map((video) => (video.id === videoId ? { ...video, isPlaying: !video.isPlaying } : video)),
