@@ -46,7 +46,8 @@ export const useVideoStore = create((set, get) => ({
       src: URL.createObjectURL(videoData.videoBlob),
       originalDuration: videoData.duration,
       duration: videoData.duration,
-      startTime: videoData.startTime || 0,
+      startTime: 0,
+      playbackOffset: 0,
       endTime: videoData.endTime || videoData.duration,
       isPlaying: false,
       isDragging: false,
@@ -96,15 +97,32 @@ export const useVideoStore = create((set, get) => ({
     }));
   },
   updateVideoTimes: (id, times) =>
+    set((state) => {
+      const video = state.videos.find((v) => v.id === id);
+      if (!video) return state;
+
+      const playbackOffset = times.playbackOffset ?? video.playbackOffset ?? 0;
+
+      return {
+        videos: state.videos.map((v) =>
+          v.id === id
+            ? {
+                ...v,
+                ...times,
+                playbackOffset,
+                startTime: 0,
+              }
+            : v
+        ),
+      };
+    }),
+
+  syncVideoPlayback: (currentTime) =>
     set((state) => ({
-      videos: state.videos.map((v) =>
-        v.id === id
-          ? {
-              ...v,
-              ...times,
-            }
-          : v
-      ),
+      videos: state.videos.map((video) => ({
+        ...video,
+        playbackOffset: currentTime,
+      })),
     })),
 
   resetBackAllVideos: () => {
@@ -135,7 +153,6 @@ export const useVideoStore = create((set, get) => ({
 
   forwardVideo: () => {
     set((state) => {
-
       const newTime = Math.min(state.currentTime + 10, state.duration);
 
       if (state.playerRef) {
@@ -161,6 +178,86 @@ export const useVideoStore = create((set, get) => ({
     });
   },
 
+  deleteVideo: (ID) => {
+    set((state) => {
+      return {
+        videos: state.videos.filter((i) => i.id !== ID),
+      };
+    });
+  },
+
+  // TEXTS
+  selectedTextId: "", // similar to isVideoSelected, jusy as how isVideoSelected holds the id of the selected video this one holds the id of the selected text
+  texts: [],
+
+  addTextsOnTL: (text, hasBG = false, containerWidth) => {
+    const newTextObject = {
+      id: uuidv4(),
+      description: text,
+      opacity: 100,
+      // Get center position dynamically
+      x: containerWidth.width / 2, // Will be set after mounting
+      y: containerWidth.height / 2, // Will be set after mounting
+      fontSize: 18,
+      duration: 20, // Match longest video duration
+      endTime: 20,
+      startTime: 0,
+      color: "#ffffff",
+      backgroundColor: hasBG,
+      padding: 8,
+    };
+
+    set((state) => {
+      return {
+        texts: state.texts.push(newTextObject),
+      };
+    });
+  },
+
+  deleteTextFromTL: (ID) => {
+    return {
+      texts: state.texts.filter((t) => t.id !== ID),
+    };
+  },
+  setSelectedText: (ID) => {
+    return {
+      selectedTextId: ID,
+    };
+  },
+  updateTextPosition: (id, x, y) => {},
+
+  updateTextStyle: (ID, styleObject) => {
+    const newTexts = state.texts.map((i) => {
+      if (i.id === ID) {
+        return {
+          ...i,
+          ...styleObject,
+        };
+      } else {
+        return i;
+      }
+    });
+    return {
+      texts: newTexts,
+    };
+  },
+
+  updateTextsTime: (ID, endTime) => {
+    const newTexts = state.texts.map((i) => {
+      if (i.id === ID) {
+        return {
+          ...i,
+          endTime,
+          duration: endTime - i.startTime,
+        };
+      } else {
+        return i;
+      }
+    });
+    return {
+      texts: newTexts,
+    };
+  },
   // toggleVideoPlayback: (videoId) =>
   //   set((state) => ({
   //     videos: state.videos.map((video) => (video.id === videoId ? { ...video, isPlaying: !video.isPlaying } : video)),

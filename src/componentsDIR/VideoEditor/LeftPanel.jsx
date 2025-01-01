@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useState, useRef, useEffect, useCallback } from "react";
-import { Video, Image, Type, Upload } from "lucide-react";
+import { Video, Image, Type, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -16,8 +16,10 @@ const LeftPanel = memo(() => {
   const [openMenu, setOpenMenu] = useState(null);
   const menuRef = useRef(null);
   const videos = useVideoStore((state) => state.videos);
+  const deleteVideo = useVideoStore((state) => state.deleteVideo);
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const addTextsOnTL = useVideoStore((state) => state.addTextsOnTL);
 
   const toggleMenu = (menu) => {
     setOpenMenu(openMenu === menu ? null : menu);
@@ -111,17 +113,28 @@ const LeftPanel = memo(() => {
                       key={index}
                       className="w-16 h-16 rounded-lg bg-accent/50 border border-gray-600 flex items-center justify-center cursor-pointer hover:bg-accent transition-colors"
                     >
-                      <video
-                        src={video.src}
-                        className="h-full w-full rounded-md object-cover"
-                        preload="metadata"
-                        muted
-                        playsInline
-                        onLoadedData={(e) => {
-                          const videoEl = e.currentTarget;
-                          videoEl.currentTime = 8; // Set to first frame
-                        }}
-                      />
+                      <div className="flex flex-col h-full ">
+                        <div className="relative flex w-full justify-end">
+                          <X
+                            onClick={() => {
+                              deleteVideo(video.id);
+                            }}
+                            className="absolute bg-black pointer-events-auto z-[1] cursor-pointer p-[1px] text-white rounded-full border border-gray-400"
+                            size={20}
+                          />
+                        </div>
+                        <video
+                          src={video.src}
+                          className="h-full w-full rounded-md object-cover"
+                          preload="metadata"
+                          muted
+                          playsInline
+                          onLoadedData={(e) => {
+                            const videoEl = e.currentTarget;
+                            videoEl.currentTime = 8; // Set to first frame
+                          }}
+                        />
+                      </div>
                     </div>
                     // <div
                     //   key={index}
@@ -142,7 +155,7 @@ const LeftPanel = memo(() => {
                     <span>Upload Video</span>
                   </div>
                   <Input
-                  ref={fileInputRef}
+                    ref={fileInputRef}
                     id="video-upload"
                     type="file"
                     accept="video/*"
@@ -214,7 +227,10 @@ const LeftPanel = memo(() => {
                 className="w-full"
                 onClick={() => {
                   console.log("Text added:", text);
-                  setText("");
+                  addTextsOnTL(text, false, {
+                    width: window.innerWidth - 100,
+                    height: window.innerHeight - 100,
+                  });
                 }}
               >
                 Add Text

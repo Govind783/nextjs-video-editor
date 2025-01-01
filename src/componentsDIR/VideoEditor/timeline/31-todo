@@ -1,23 +1,4 @@
 TODO
-- preventing pin from going to 0
-- on trimming sync play pause
-- when timming a video from the right side, and making the duration to 20s, the play ahead PIN doesnt work unless u slightly extend the video clip, and even while extening the play ahead pin snaps at 0
-- sync ruler component scale
-- click event on time line clips, and make the arrows gray by default, on click slect it and enable dragging only if select and on select just as how we make border white make arrows also white
-- test multi video
-
-[
-    {
-        "id": "2dc7700c-446f-4db8-bb34-4f3ebafaf497",
-        "src": "blob:http://localhost:3000/6e11ead8-d9a9-4124-826b-1d0b99f56938",
-        "originalDuration": 240.65161,
-        "duration": 183.40161,
-        "startTime": 58.25,
-        "endTime": 240.65161,
-        "isPlaying": false,
-        "isDragging": false
-    }
-]
 
 DONE ->
 - add a button as reset duration on the header
@@ -28,4 +9,12 @@ DONE ->
 - video should not be alloweed to drag beyond itself
 - ruler/scale is indeed updating
 - +10 and -10s
-
+- preventing pin from going to 0
+- on trimming sync play pause
+- test multi video,
+- video restarting bug on trimming start has been solved
+- Video dissapearing at end from the DOM has been solbved
+- sync ruler component scale
+- canvas width and ruler not reseting after resettgin from header solved
+- Video continued to play beyond its end time, solved and also added a feature where in the moment it ends we set it back to 0
+- made video delete fn

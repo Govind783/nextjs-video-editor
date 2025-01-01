@@ -44,7 +44,7 @@ const TimeLineIndex = () => {
   const setIsVideoSelected = useVideoStore((state) => state.setIsVideoSelected);
   const scale = useVideoStore((state) => state.scale);
   const videos = useVideoStore((state) => state.videos);
-
+  const currentTime = useVideoStore((state) => state.currentTime);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [viewportWidth, setViewportWidth] = useState(0);
   const [canvasWidth, setCanvasWidth] = useState(0);
@@ -52,6 +52,7 @@ const TimeLineIndex = () => {
   const setDuration = useVideoStore((state) => state.setDuration);
   const totalTimelineWidth = durationLocal * FPS * scale.zoom * 60;
   const videoRegions = useRef([]);
+  const playerRef = useVideoStore((state) => state.playerRef);
   const updateVideoTimes = useVideoStore((state) => state.updateVideoTimes);
   const dragStateRef = useRef({
     isDragging: true,
@@ -66,7 +67,7 @@ const TimeLineIndex = () => {
         setDuratrionLocal(videos[i].duration);
       }
     }
-  }, [videos.length]);
+  }, [videos]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -194,7 +195,7 @@ const TimeLineIndex = () => {
       ctx.fillStyle = "#999";
       ctx.font = `${fontSize}px sans-serif`;
       ctx.textBaseline = "middle";
-      ctx.fillText(`▶ Video ${index + 1}`, isShortVideo ? 16 : (startX - 20) + textOffset, y + height / 2);
+      ctx.fillText(`▶ Video ${index + 1}`, isShortVideo ? 16 : startX - 20 + textOffset, y + height / 2);
     });
   }, [videos, scale.zoom, isVideoSelected, canvasWidth]);
 
@@ -226,7 +227,6 @@ const TimeLineIndex = () => {
     [scrollLeft, videos.length]
   );
 
-
   const handleMouseUp = useCallback(() => {
     if (dragStateRef.current.isDragging) {
       const video = videos.find((v) => v.id === dragStateRef.current.videoId);
@@ -234,27 +234,27 @@ const TimeLineIndex = () => {
         // add transition style to canvas
         // reason for the dtransition since we're clipping and trimming in real time, and the moment the MouseUp event gets fired, the video rectangle on the TL gets shortened and immediately the canvas is also autoshrunk, since the canvas size is variable and keeps changing based on video lenght, so to avoid a veeyr rough UX that is immediate canvas size reduction along with Tl's reduction we have added the transition
         if (canvasRef.current) {
-          canvasRef.current.style.transition = 'width 0.3s ease-out';
+          canvasRef.current.style.transition = "width 0.3s ease-out";
         }
-  
+
         const newDuration = video.endTime - video.startTime;
         updateVideoTimes(video.id, {
           duration: newDuration,
         });
-  
+
         const maxDuration = Math.max(...videos.map((v) => v.endTime - v.startTime));
         setDuratrionLocal(maxDuration);
         setDuration(maxDuration);
-  
+
         // remove transition after animation completes
         setTimeout(() => {
           if (canvasRef.current) {
-            canvasRef.current.style.transition = '';
+            canvasRef.current.style.transition = "";
           }
         }, 300);
       }
     }
-  
+
     dragStateRef.current = {
       isDragging: false,
       videoId: null,
@@ -348,25 +348,24 @@ const TimeLineIndex = () => {
         // 3. dont let it get dragged beyond its own width
         const maxTime = Math.min(
           (canvasWidth - TIMELINE_OFFSET_CANVAS_LEFT) / (FPS * scale.zoom * 60),
-          video.originalDuration // Add this constraint using originalDuration
+          video.originalDuration
         );
 
-        const newEndTime = Math.min(
-          maxTime, // Don't exceed canvas width or original duration
-          Math.max(
-            video.startTime + MIN_DELTA, // Maintain minimum delta from start
-            timePosition
-          )
-        );
-        updateVideoTimes(video.id, { endTime: newEndTime });
+        const newEndTime = Math.min(maxTime, Math.max(video.startTime + MIN_DELTA, timePosition));
+
+        updateVideoTimes(video.id, {
+          endTime: newEndTime,
+          playbackOffset: currentTime,
+          startTime: 0,
+        });
+
+        if (playerRef) {
+          playerRef.currentTime = currentTime;
+        }
       }
     },
-    [scale.zoom, videos, updateVideoTimes]
+    [scale.zoom, videos, updateVideoTimes, currentTime]
   );
-
-  useEffect(() => {
-    console.log(videos);
-  }, [videos]);
 
   useEffect(() => {
     window.addEventListener("mousemove", handleDrag);
@@ -404,7 +403,7 @@ const TimeLineIndex = () => {
                 willChange: "transform",
                 zIndex: 2,
                 pointerEvents: "all",
-                transition: 'width 0.3s ease-out',
+                transition: "width 0.3s ease-out",
                 // zIndex: 1, // Add this
                 // pointerEvents: "auto" // Add this
               }}

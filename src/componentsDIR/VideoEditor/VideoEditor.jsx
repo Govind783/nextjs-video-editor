@@ -25,6 +25,8 @@ const VideoEditor = () => {
   const videoRefs = useRef({});
   const toggleVideoPlayback = useVideoStore((state) => state.toggleVideoPlayback);
   const currentTime = useVideoStore((state) => state.currentTime);
+  const texts = useVideoStore((state) => state.texts);
+  const setSelectedText = useVideoStore((state) => state.setSelectedText);
 
   useEffect(() => {
     if (currentVideoId && videoRefs.current[currentVideoId]) {
@@ -61,6 +63,7 @@ const VideoEditor = () => {
 
   const setCurrentTime = useVideoStore((state) => state.setCurrentTime);
 
+  // 3. Modify the VideoEditor effect to handle playback syncing
   useEffect(() => {
     /// NOTE, when u add ur trimand edit functionality u will have to notify or re reun this effect coz maybe the video was suposedly the longest just got trimmed and now a second video is tyhe longest, so u will have to update ur variables again
     // Find the longest video
@@ -69,29 +72,47 @@ const VideoEditor = () => {
 
       if (longestVideo && videoRefs.current[longestVideo.id]) {
         const videoElement = videoRefs.current[longestVideo.id];
-        const { endTime } = videos.find((v) => v.id === longestVideo.id) || {};
+        const video = videos.find((v) => v.id === longestVideo.id);
 
-        setCurrentTime(videoElement.currentTime);
+        if (video) {
+          const newTime = videoElement.currentTime;
 
-        if (endTime !== undefined && videoElement.currentTime >= endTime) {
-          videoElement.pause();
-          toggleVideoPlayback({ isVideoPlaying: false });
+          if (newTime >= video.endTime) {
+            videoElement.currentTime = 0;
+            videoElement.pause();
+            setCurrentTime(0);
+            toggleVideoPlayback({ isVideoPlaying: false });
+            return;
+          }
+
+          setCurrentTime(newTime);
         }
       }
     };
 
     const handleVideoEnd = () => {
-      toggleVideoPlayback({ isVideoPlaying: false });
+      const longestVideo = videos.reduce((max, video) => (video.duration > max.duration ? video : max), videos[0]);
+      if (longestVideoRef.current[longestVideo.id]) {
+        const videoElement = videoRefs.current[longestVideo.id];
+
+        videoElement.currentTime = 0;
+        setCurrentTime(0);
+        toggleVideoPlayback({ isVideoPlaying: false });
+      }
     };
 
     const longestVideo = videos.reduce((max, video) => (video.duration > max.duration ? video : max), videos[0]);
-
     const longestVideoRef = videoRefs.current[longestVideo?.id];
+
     if (longestVideoRef) {
-      // Set the startTime when the video is initialized
-      const { startTime } = videos.find((v) => v.id === longestVideo.id) || {};
-      if (startTime !== undefined) {
-        longestVideoRef.currentTime = startTime;
+      const video = videos.find((v) => v.id === longestVideo.id);
+
+      // Set up initial constraints
+      if (video?.endTime) {
+        longestVideoRef.onended = () => {
+          longestVideoRef.currentTime = 0;
+          setCurrentTime(0);
+        };
       }
 
       longestVideoRef.addEventListener("timeupdate", handleTimeUpdate);
@@ -176,7 +197,7 @@ const VideoEditor = () => {
                           className="video-item"
                           style={{ position: "absolute" }}
                         >
-                          {item.duration >= currentTime && ( // here is it >= coz if u just do > then it removes the video form the dom, not the best solution but for now fine, TODO fix later this is more for a situation when the video ends and the guy presses on play again
+                          {item.duration + 0.8 >= currentTime && ( // here is it >= coz if u just do > then it removes the video form the dom, not the best solution but for now fine, TODO fix later this is more for a situation when the video ends and the guy presses on play again
                             <video
                               ref={(el) => {
                                 if (el) {
