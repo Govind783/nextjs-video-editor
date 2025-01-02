@@ -18,3 +18,8 @@ DONE ->
 - canvas width and ruler not reseting after resettgin from header solved
 - Video continued to play beyond its end time, solved and also added a feature where in the moment it ends we set it back to 0
 - made video delete fn
+
+- tabs UI in left panel
+- height auto increase of canvas
+- slight scrolling issue
+- accessibility on left panel, enter for text submit and escape

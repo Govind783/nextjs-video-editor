@@ -51,6 +51,8 @@ export const useVideoStore = create((set, get) => ({
       endTime: videoData.endTime || videoData.duration,
       isPlaying: false,
       isDragging: false,
+      speed: 1,
+      volume: 100,
     };
 
     set((state) => ({
@@ -87,6 +89,16 @@ export const useVideoStore = create((set, get) => ({
       })),
     }));
   },
+
+  updateVideoSpeed: (id, speed) =>
+    set((state) => ({
+      videos: state.videos.map((v) => (v.id === id ? { ...v, speed } : v)),
+    })),
+
+  updateVideoVolume: (id, volume) =>
+    set((state) => ({
+      videos: state.videos.map((v) => (v.id === id ? { ...v, volume } : v)),
+    })),
 
   pauseAllVideos: () => {
     set((state) => ({
@@ -189,6 +201,8 @@ export const useVideoStore = create((set, get) => ({
   // TEXTS
   selectedTextId: "", // similar to isVideoSelected, jusy as how isVideoSelected holds the id of the selected video this one holds the id of the selected text
   texts: [],
+  textIsDragging: false,
+  currentTextTime: 0,
 
   addTextsOnTL: (text, hasBG = false, containerWidth) => {
     const newTextObject = {
@@ -205,61 +219,92 @@ export const useVideoStore = create((set, get) => ({
       color: "#ffffff",
       backgroundColor: hasBG,
       padding: 8,
+      fontWeight: "normal",
     };
 
     set((state) => {
+      const newTexts = [...state.texts, newTextObject]; // Create a new array
       return {
-        texts: state.texts.push(newTextObject),
+        texts: newTexts, // Return the new array
       };
     });
   },
 
-  deleteTextFromTL: (ID) => {
-    return {
+  deleteTextFromTL: (ID) =>
+    set((state) => ({
       texts: state.texts.filter((t) => t.id !== ID),
-    };
-  },
-  setSelectedText: (ID) => {
-    return {
-      selectedTextId: ID,
-    };
-  },
-  updateTextPosition: (id, x, y) => {},
+    })),
+
+  setSelectedText: (ID) => set({ selectedTextId: ID }),
+
+  updateTextPosition: (id, x, y) =>
+    set((state) => ({
+      texts: state.texts.map((text) => (text.id === id ? { ...text, x, y } : text)),
+    })),
 
   updateTextStyle: (ID, styleObject) => {
-    const newTexts = state.texts.map((i) => {
-      if (i.id === ID) {
-        return {
-          ...i,
-          ...styleObject,
-        };
-      } else {
-        return i;
-      }
+    set((state) => {
+      const newTexts = state.texts.map((i) => {
+        if (i.id === ID) {
+          return {
+            ...i,
+            ...styleObject,
+          };
+        } else {
+          return i;
+        }
+      });
+      return {
+        texts: newTexts,
+      };
     });
-    return {
-      texts: newTexts,
-    };
   },
 
   updateTextsTime: (ID, endTime) => {
-    const newTexts = state.texts.map((i) => {
-      if (i.id === ID) {
-        return {
-          ...i,
-          endTime,
-          duration: endTime - i.startTime,
-        };
-      } else {
-        return i;
-      }
+    set((state) => {
+      const newTexts = state.texts.map((text) => {
+        if (text.id === ID) {
+          const newDuration = endTime - text.startTime;
+          return {
+            ...text,
+            endTime,
+            duration: newDuration,
+            playbackOffset: state.currentTime,
+          };
+        }
+        return text;
+      });
+
+      // Update global duration if text extends beyond current duration
+      const maxTextDuration = Math.max(...newTexts.map((t) => t.endTime));
+      const maxVideoDuration = Math.max(...state.videos.map((v) => v.duration));
+      const newDuration = Math.max(maxTextDuration, maxVideoDuration);
+
+      return {
+        texts: newTexts,
+        duration: newDuration,
+      };
     });
-    return {
-      texts: newTexts,
-    };
   },
-  // toggleVideoPlayback: (videoId) =>
-  //   set((state) => ({
-  //     videos: state.videos.map((video) => (video.id === videoId ? { ...video, isPlaying: !video.isPlaying } : video)),
-  //   })),
+
+  syncTextPlayback: (currentTime) =>
+    set((state) => ({
+      texts: state.texts.map((text) => ({
+        ...text,
+        playbackOffset: currentTime,
+      })),
+    })),
+
+  resetTexts: () =>
+    set((state) => {
+      const newTexts = state.texts.map((text) => ({
+        ...text,
+        startTime: 0,
+        endTime: text.originalDuration,
+        duration: text.originalDuration,
+      }));
+      return { texts: newTexts };
+    }),
+
+  setTextIsDragging: (isDragging) => set({ textIsDragging: isDragging }),
 }));

@@ -27,6 +27,7 @@ const VideoEditor = () => {
   const currentTime = useVideoStore((state) => state.currentTime);
   const texts = useVideoStore((state) => state.texts);
   const setSelectedText = useVideoStore((state) => state.setSelectedText);
+  const updateTextStyle = useVideoStore((state) => state.updateTextStyle);
 
   useEffect(() => {
     if (currentVideoId && videoRefs.current[currentVideoId]) {
@@ -43,7 +44,7 @@ const VideoEditor = () => {
       container: viewerRef.current.infiniteViewer.getContainer(),
       boundContainer: true,
       hitRate: 0,
-      selectableTargets: [".video-item"],
+      selectableTargets: [".video-item", ".text-item"],
       selectFromInside: false,
       selectByClick: true,
       toggleContinueSelect: "shift",
@@ -59,7 +60,7 @@ const VideoEditor = () => {
     return () => {
       selection.destroy();
     };
-  }, [videos]);
+  }, [videos, texts]);
 
   const setCurrentTime = useVideoStore((state) => state.setCurrentTime);
 
@@ -220,6 +221,32 @@ const VideoEditor = () => {
                         </div>
                       );
                     })}
+                    {texts.map((item, index) => (
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedText(item.id);
+                          setTargets([e.currentTarget]);
+                        }}
+                        data-text-id={item.id}
+                        key={item.id}
+                        className="text-item"
+                        style={{
+                          position: "absolute",
+                          left: item.x,
+                          top: item.y,
+                          color: item.color,
+                          fontSize: `${item.fontSize}px`,
+                          opacity: item.opacity / 100,
+                          padding: `${item.padding}px`,
+                          backgroundColor: item.backgroundColor ? "rgba(0,0,0,0.5)" : "transparent",
+                          cursor: "pointer",
+                          userSelect: "none",
+                        }}
+                      >
+                        {item.duration + 0.8 >= currentTime && <span>{item.description}</span>}
+                      </div>
+                    ))}
                   </div>
 
                   <Moveable
@@ -235,6 +262,9 @@ const VideoEditor = () => {
                     onDrag={({ target, top, left }) => {
                       target.style.top = `${top}px`;
                       target.style.left = `${left}px`;
+                      if (target.dataset.textId) {
+                        // updateTextPosition(target.dataset.textId, left, top);
+                      }
                     }}
                     onScale={({ target, transform, direction }) => {
                       const [xControl, yControl] = direction;
@@ -271,17 +301,26 @@ const VideoEditor = () => {
                     //   target.style.transform = transform;
                     // }}
                     onResize={({ target, width, height, direction }) => {
-                      if (direction[1] === 1) {
-                        const currentWidth = target.clientWidth;
-                        const currentHeight = target.clientHeight;
-                        const scaleY = height / currentHeight;
-                        const scale = scaleY;
+                      if (target.dataset.textId) {
+                        const currentFontSize = parseFloat(target.style.fontSize);
+                        const heightRatio = height / target.offsetHeight;
+                        const newFontSize = Math.max(13, Math.round(currentFontSize * heightRatio));
 
-                        target.style.width = `${currentWidth * scale}px`;
-                        target.style.height = `${currentHeight * scale}px`;
+                        target.style.fontSize = `${newFontSize}px`;
+                        updateTextStyle(target.dataset.textId, { fontSize: newFontSize }); // apply debounce on this later, ig lets update tsrget insteanlty for instat ui feedback but state can be updated in a debounced fashion
                       } else {
-                        target.style.width = `${width}px`;
-                        target.style.height = `${height}px`;
+                        if (direction[1] === 1) {
+                          const currentWidth = target.clientWidth;
+                          const currentHeight = target.clientHeight;
+                          const scaleY = height / currentHeight;
+                          const scale = scaleY;
+
+                          target.style.width = `${currentWidth * scale}px`;
+                          target.style.height = `${currentHeight * scale}px`;
+                        } else {
+                          target.style.width = `${width}px`;
+                          target.style.height = `${height}px`;
+                        }
                       }
                     }}
                   />

@@ -20,6 +20,8 @@ const LeftPanel = memo(() => {
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const addTextsOnTL = useVideoStore((state) => state.addTextsOnTL);
+  const texts = useVideoStore((state) => state.texts);
+  const deleteTextFromTL = useVideoStore((state) => state.deleteTextFromTL);
 
   const toggleMenu = (menu) => {
     setOpenMenu(openMenu === menu ? null : menu);
@@ -79,12 +81,27 @@ const LeftPanel = memo(() => {
               });
             }
           };
+          toggleMenu(null);
         };
         reader.readAsArrayBuffer(file);
       }
     },
     [addVideo]
   );
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setOpenMenu(null);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   return (
     <div className="fixed bg-black left-4 z-[4] top-[37%] transform -translate-y-1/2" ref={menuRef}>
@@ -215,27 +232,88 @@ const LeftPanel = memo(() => {
 
         {openMenu === "text" && (
           <MenuContent key={3}>
-            <div className="flex justify-center gap-4 flex-col h-28">
-              <Input
-                placeholder="Enter your text"
-                className="h-9"
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                ref={(el) => el && el.focus()}
-              />
-              <Button
-                className="w-full"
-                onClick={() => {
-                  console.log("Text added:", text);
-                  addTextsOnTL(text, false, {
-                    width: window.innerWidth - 100,
-                    height: window.innerHeight - 100,
-                  });
-                }}
-              >
-                Add Text
-              </Button>
-            </div>
+            <Tabs defaultValue="add-text" className="w-full">
+              <TabsList className="w-full mb-4">
+                <TabsTrigger value="add-text" className="flex-1">
+                  Add Text
+                </TabsTrigger>
+                <TabsTrigger value="your-texts" className="flex-1">
+                  Your Texts
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="add-text" className="mt-0">
+                <div className="flex justify-center gap-4 flex-col h-28">
+                  <Input
+                    placeholder="Enter your text"
+                    className="h-9"
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        if (text.trim() === "") {
+                          toast({
+                            title: "Text cannot be empty",
+                            duration: 2000,
+                          });
+                        } else {
+                          addTextsOnTL(text, false, {
+                            width: window.innerWidth - 100,
+                            height: window.innerHeight - 100,
+                          });
+                          setText("");
+                          toggleMenu(null);
+                        }
+                      }
+                    }}
+                    ref={(el) => el && el.focus()}
+                  />
+                  <Button
+                    className="w-full"
+                    onClick={() => {
+                      if (text.trim() === "") {
+                        toast({
+                          title: "Text cannot be empty",
+                          duration: 2000,
+                        });
+                      } else {
+                        addTextsOnTL(text, false, {
+                          width: window.innerWidth - 100,
+                          height: window.innerHeight - 100,
+                        });
+                        setText("");
+                        toggleMenu(null);
+                      }
+                    }}
+                  >
+                    Add Text
+                  </Button>
+                </div>
+              </TabsContent>
+              <TabsContent value="your-texts" className="mt-0">
+                <div className="flex flex-wrap gap-3 justify-start mx-auto max-h-[240px] overflow-y-auto pr-2">
+                  {texts.length === 0 ? (
+                    <div className="w-full text-center text-muted-foreground py-4">No texts added yet</div>
+                  ) : (
+                    texts.map((text, index) => (
+                      <div key={index} className="flex w-full h-full items-center gap-4">
+                        <div className="bg-accent/20 rounded-md border border-gray-600 p-2 text-sm break-all w-[94%]">
+                          {text.description}
+                        </div>
+                        <div className="relative">
+                          <X
+                            onClick={() => {
+                              deleteTextFromTL(text.id);
+                            }}
+                            className=" bg-black pointer-events-auto z-[1] cursor-pointer p-[1px] text-white rounded-full border border-gray-400"
+                            size={20}
+                          />
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
           </MenuContent>
         )}
       </TooltipProvider>
