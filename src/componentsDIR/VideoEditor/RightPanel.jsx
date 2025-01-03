@@ -4,13 +4,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { HexColorPicker } from "react-colorful";
 import { Separator } from "@/components/ui/separator";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/CustomDrawer";
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/CustomDrawer";
 import { memo, useCallback, useEffect, useState } from "react";
 import { useVideoStore } from "@/State/store";
 import { Bold, Italic, Type, Underline, Video, Volume2 } from "lucide-react";
@@ -22,6 +16,7 @@ const RightPanel = memo(() => {
   const updateTextStyle = useVideoStore((state) => state.updateTextStyle);
   const updateVideoSpeed = useVideoStore((state) => state.updateVideoSpeed);
   const updateVideoVolume = useVideoStore((state) => state.updateVideoVolume);
+  const texts = useVideoStore((state) => state.texts);
 
   const [isTextDrawerOpen, setIsTextDrawerOpen] = useState(false);
   const [isVideoDrawerOpen, setIsVideoDrawerOpen] = useState(false);
@@ -89,9 +84,9 @@ const RightPanel = memo(() => {
   );
 
   const handleFontSizeChange = useCallback(
-    (value) => {
+    (value, accessedBy) => {
       if (selectedTextId) {
-        updateTextStyle(selectedTextId, { fontSize: value[0] });
+        updateTextStyle(selectedTextId, { [accessedBy]: value[0] });
       }
     },
     [selectedTextId, updateTextStyle]
@@ -145,7 +140,6 @@ const RightPanel = memo(() => {
 
   const handleVideoClick = (e) => {
     e.stopPropagation();
-    console.log("Video button clicked, current state:", isVideoDrawerOpen)
     setIsVideoDrawerOpen(true);
   };
 
@@ -206,7 +200,7 @@ const RightPanel = memo(() => {
               )}
             </>
           )}
-          {selectedTextId && (
+          {selectedTextId && texts.length > 0 && (
             <>
               <MenuButton
                 icon={<Type className="h-6 w-6" />}
@@ -268,8 +262,10 @@ const RightPanel = memo(() => {
                                 <Slider
                                   id="font-size"
                                   value={[selectedText.fontSize]}
-                                  onValueChange={handleFontSizeChange}
-                                  max={32}
+                                  onValueChange={(e) => {
+                                    handleFontSizeChange(e, "fontSize");
+                                  }}
+                                  max={300}
                                   min={8}
                                   step={1}
                                   className="flex-grow"
@@ -277,6 +273,46 @@ const RightPanel = memo(() => {
                                 <span className="text-sm font-medium w-8 text-center">{selectedText.fontSize}px</span>
                               </div>
                             </div>
+
+                            {/* <div>
+                              <label htmlFor="Width" className="text-sm font-medium mb-2 block">
+                                Width
+                              </label>
+                              <div className="flex items-center space-x-4">
+                                <Slider
+                                  id="Width"
+                                  value={[selectedText.width]}
+                                  onValueChange={(e) => {
+                                    handleFontSizeChange(e, "width");
+                                  }}
+                                  max={500}
+                                  min={100}
+                                  step={1}
+                                  className="flex-grow"
+                                />
+                                <span className="text-sm font-medium w-8 text-center">{selectedText.width}px</span>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label htmlFor="height" className="text-sm font-medium mb-2 block">
+                                Height
+                              </label>
+                              <div className="flex items-center space-x-4">
+                                <Slider
+                                  id="height"
+                                  value={[selectedText.height]}
+                                  onValueChange={(e) => {
+                                    handleFontSizeChange(e, "height");
+                                  }}
+                                  max={300}
+                                  min={50}
+                                  step={1}
+                                  className="flex-grow"
+                                />
+                                <span className="text-sm font-medium w-8 text-center">{selectedText.height}px</span>
+                              </div>
+                            </div> */}
                           </div>
                         </Section>
 

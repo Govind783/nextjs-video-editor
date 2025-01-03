@@ -264,8 +264,10 @@ const VideoEditor = () => {
                             cursor: "pointer",
                             userSelect: "none",
                             fontWeight: item.fontWeight,
-                            backgroundColor: item.backgroundColor || "black",
+                            backgroundColor: item.backgroundColor || "transparent",
                             textDecoration: item.isUnderline ? "underline" : "",
+                            width: `${item.width}px`,
+                            height: `${item.height}px`,
                           }}
                         >
                           {item.duration + 0.8 >= currentTime && <span>{item.description}</span>}
@@ -300,15 +302,22 @@ const VideoEditor = () => {
 
                       const scaleRegex = /scale\(([^)]+)\)/;
                       const match = target.style.transform.match(scaleRegex);
-                      if (match) {
+
+                      if (match && target.dataset.textId) {
                         const [scaleX, scaleY] = match[1].split(",").map((v) => parseFloat(v));
+                        const currentWidth = parseFloat(target.style.width);
+                        const currentHeight = parseFloat(target.style.height);
 
-                        const currentWidth = target.clientWidth * scaleX;
-                        const currentHeight = target.clientHeight * scaleY;
-                        const newWidth = target.clientWidth * parseFloat(transform.match(scaleRegex)[1].split(",")[0]);
-                        const newHeight =
-                          target.clientHeight * parseFloat(transform.match(scaleRegex)[1].split(",")[1]);
+                        const newWidth = currentWidth * scaleX;
+                        const newHeight = currentHeight * scaleY;
 
+                        target.style.width = `${newWidth}px`;
+                        target.style.height = `${newHeight}px`;
+
+                        updateTextDimensions(target.dataset.textId, {
+                          width: newWidth,
+                          height: newHeight,
+                        });
                         const diffX = currentWidth - newWidth;
                         const diffY = currentHeight - newHeight;
 
@@ -327,12 +336,15 @@ const VideoEditor = () => {
                     // }}
                     onResize={({ target, width, height, direction }) => {
                       if (target.dataset.textId) {
+                        // const textId = target.dataset.textId;
                         const currentFontSize = parseFloat(target.style.fontSize);
                         const heightRatio = height / target.offsetHeight;
                         const newFontSize = Math.max(13, Math.round(currentFontSize * heightRatio));
 
                         target.style.fontSize = `${newFontSize}px`;
-                        updateTextStyle(target.dataset.textId, { fontSize: newFontSize }); // apply debounce on this later, ig lets update tsrget insteanlty for instat ui feedback but state can be updated in a debounced fashion
+                        target.style.width = `${width}px`;
+                        target.style.height = `${height}px`;
+                        updateTextStyle(target.dataset.textId, { fontSize: newFontSize, width, height }); // apply debounce on this later, ig lets update tsrget insteanlty for instat ui feedback but state can be updated in a debounced fashion
                       } else {
                         if (direction[1] === 1) {
                           const currentWidth = target.clientWidth;

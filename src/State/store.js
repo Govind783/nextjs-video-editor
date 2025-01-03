@@ -240,23 +240,24 @@ export const useVideoStore = create((set, get) => ({
       id: uuidv4(),
       description: text,
       opacity: 100,
-      // Get center position dynamically
-      x: containerWidth.width / 2, // Will be set after mounting
-      y: containerWidth.height / 2, // Will be set after mounting
+      x: containerWidth.width / 2, 
+      y: containerWidth.height / 2,
       fontSize: 18,
-      duration: 20, // Match longest video duration
+      duration: 20, 
       endTime: 20,
       startTime: 0,
       color: "#ffffff",
       backgroundColor: hasBG,
       padding: 8,
       fontWeight: "normal",
+      width: 200, 
+      height: 40, 
     };
 
     set((state) => {
-      const newTexts = [...state.texts, newTextObject]; // Create a new array
+      const newTexts = [...state.texts, newTextObject]; 
       return {
-        texts: newTexts, // Return the new array
+        texts: newTexts, 
       };
     });
   },
