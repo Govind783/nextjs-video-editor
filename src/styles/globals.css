@@ -125,3 +125,6 @@ body {
   border-radius: inherit;
   opacity: 0;
 }
+.videoButtonRightPanel {
+  pointer-events: auto;
+}

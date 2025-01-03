@@ -90,10 +90,38 @@ export const useVideoStore = create((set, get) => ({
     }));
   },
 
-  updateVideoSpeed: (id, speed) =>
-    set((state) => ({
-      videos: state.videos.map((v) => (v.id === id ? { ...v, speed } : v)),
-    })),
+  // updateVideoSpeed: (id, speed) =>
+  //   set((state) => ({
+  //     videos: state.videos.map((v) => (v.id === id ? { ...v, speed } : v)),
+  //   })),
+
+  updateVideoSpeed: (id, newSpeed) =>
+    set((state) => {
+      const updatedVideos = state.videos.map((video) => {
+        if (video.id === id) {
+          const newDuration = video.originalDuration / newSpeed;
+
+          const wasAtMax = video.endTime === video.duration;
+          const newEndTime = wasAtMax ? newDuration : Math.min(video.endTime, newDuration);
+
+          return {
+            ...video,
+            speed: newSpeed,
+            duration: newDuration,
+            endTime: newEndTime,
+          };
+        }
+        return video;
+      });
+
+      const maxDuration = Math.max(...updatedVideos.map((v) => v.endTime));
+      const maxTextDuration = Math.max(...state.texts.map((t) => t.endTime));
+
+      return {
+        videos: updatedVideos,
+        duration: Math.max(maxDuration, maxTextDuration),
+      };
+    }),
 
   updateVideoVolume: (id, volume) =>
     set((state) => ({
@@ -145,6 +173,7 @@ export const useVideoStore = create((set, get) => ({
           startTime: 0,
           endTime: v.originalDuration,
           duration: v.originalDuration,
+          speed: 1
         };
       });
       return {
@@ -165,10 +194,11 @@ export const useVideoStore = create((set, get) => ({
 
   forwardVideo: () => {
     set((state) => {
+      const video = state.videos.find(v => v.id === state.currentVideoId);
       const newTime = Math.min(state.currentTime + 10, state.duration);
 
       if (state.playerRef) {
-        state.playerRef.currentTime = newTime;
+        state.playerRef.currentTime = newTime * video.speed;
       }
 
       return {
@@ -179,10 +209,11 @@ export const useVideoStore = create((set, get) => ({
 
   rewindVideo: () => {
     set((state) => {
+      const video = state.videos.find(v => v.id === state.currentVideoId);
       const newTime = Math.max(state.currentTime - 10, 0);
 
       if (state.playerRef) {
-        state.playerRef.currentTime = newTime;
+        state.playerRef.currentTime = newTime * video.speed;
       }
       return {
         currentTime: newTime,

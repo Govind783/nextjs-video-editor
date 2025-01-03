@@ -227,7 +227,7 @@ const TimeLineIndex = () => {
       });
 
       ctx.beginPath();
-      ctx.fillStyle = text.id === selectedTextId ? "#2a3a5a" : "black";
+      ctx.fillStyle = 'black';
       ctx.roundRect(startX, y, width, height, 4);
       ctx.fill();
       ctx.closePath();

@@ -1,25 +1,9 @@
 TODO
 
-DONE ->
-- add a button as reset duration on the header
-- the MIN_DELTA of 20 as a delta doesent work for shorter videos so have it flexible instead of 20 constant as it doesent work w the 8sec reel
-- font sizes relative to the videos lenght and UI
-- dragging from right and canvas trim at te same time hence giving a weird UX, fixed
-- click gray and white
-- video should not be alloweed to drag beyond itself
-- ruler/scale is indeed updating
-- +10 and -10s
-- preventing pin from going to 0
-- on trimming sync play pause
-- test multi video,
-- video restarting bug on trimming start has been solved
-- Video dissapearing at end from the DOM has been solbved
-- sync ruler component scale
-- canvas width and ruler not reseting after resettgin from header solved
-- Video continued to play beyond its end time, solved and also added a feature where in the moment it ends we set it back to 0
-- made video delete fn
 
-- tabs UI in left panel
-- height auto increase of canvas
-- slight scrolling issue
-- accessibility on left panel, enter for text submit and escape
+DONE ->
+- mapped video drawers to state of the store, for volume and speed
+- add a width and height prop for  text, in drawer as well as videoeditor comp
+- fix drawer UI for video
+- tested speed with multi videos
+- so right panel end to end done, UI functioality, connecting states, for videos as well as texts

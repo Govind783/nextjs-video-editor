@@ -7,6 +7,7 @@ import Selection from "@interactify/selection";
 import useZoom from "@/hooks/useZoom";
 import TimeLineIndex from "./timeline/TimeLineIndex";
 import LeftPanel from "./LeftPanel";
+import RightPanel from "./RightPanel";
 
 const VideoEditor = () => {
   const viewerRef = useRef(null);
@@ -28,6 +29,7 @@ const VideoEditor = () => {
   const texts = useVideoStore((state) => state.texts);
   const setSelectedText = useVideoStore((state) => state.setSelectedText);
   const updateTextStyle = useVideoStore((state) => state.updateTextStyle);
+  const [openMenu, setOpenMenu] = useState(null);
 
   useEffect(() => {
     if (currentVideoId && videoRefs.current[currentVideoId]) {
@@ -76,8 +78,7 @@ const VideoEditor = () => {
         const video = videos.find((v) => v.id === longestVideo.id);
 
         if (video) {
-          const newTime = videoElement.currentTime;
-
+          const newTime = videoElement.currentTime / video.speed;
           if (newTime >= video.endTime) {
             videoElement.currentTime = 0;
             videoElement.pause();
@@ -93,7 +94,7 @@ const VideoEditor = () => {
 
     const handleVideoEnd = () => {
       const longestVideo = videos.reduce((max, video) => (video.duration > max.duration ? video : max), videos[0]);
-      if (longestVideoRef.current[longestVideo.id]) {
+      if (videoRefs.current[longestVideo.id]) {
         const videoElement = videoRefs.current[longestVideo.id];
 
         videoElement.currentTime = 0;
@@ -141,18 +142,25 @@ const VideoEditor = () => {
 
   useEffect(() => {
     const handleGlobalClick = (e) => {
-      if (
-        e.target.closest(".video-item") ||
-        e.target.closest(".moveable-control") ||
-        e.target.closest(".moveable-line") ||
-        e.target.closest("#timeline-canvas")
-      ) {
+      const ignoredElements = [
+        ".video-item",
+        ".moveable-control",
+        ".moveable-line",
+        "#timeline-canvas",
+        ".videoButtonRightPanel",
+        ".right-panel",
+        ".right-panel-menu",
+      ];
+
+      if (ignoredElements.some((selector) => e.target.closest(selector))) {
         return;
       }
 
       setIsVideoSelected(null);
+      setOpenMenu(null);
       setTargets([]);
     };
+
     window.addEventListener("click", handleGlobalClick);
 
     return () => {
@@ -160,11 +168,22 @@ const VideoEditor = () => {
     };
   }, []);
 
+  useEffect(() => {
+    videos.forEach((video) => {
+      const videoElement = videoRefs.current[video.id];
+      if (videoElement) {
+        videoElement.playbackRate = video.speed;
+        videoElement.volume = video.volume / 100;
+      }
+    });
+  }, [videos]);
+
   return (
     <div className="w-full h-full">
       {videos.length > 0 ? (
         <>
           <LeftPanel />
+          <RightPanel openMenu={openMenu} setOpenMenu={setOpenMenu} />
           <div className="w-full h-full" ref={containerRef}>
             <div className="w-full h-full bg-gray-950">
               <Viewer
@@ -185,7 +204,7 @@ const VideoEditor = () => {
                   }}
                 >
                   <div className="flex justify-center p-8 pt-16">
-                    {videos.map((item, index) => {
+                    {videos.map((item) => {
                       return (
                         <div
                           onClick={(e) => {
@@ -194,7 +213,7 @@ const VideoEditor = () => {
                             setIsVideoSelected(item.id);
                           }}
                           data-video-id={item.id}
-                          key={index}
+                          key={item.id}
                           className="video-item"
                           style={{ position: "absolute" }}
                         >
@@ -203,6 +222,8 @@ const VideoEditor = () => {
                               ref={(el) => {
                                 if (el) {
                                   videoRefs.current[item.id] = el;
+                                  el.playbackRate = item.speed;
+                                  el.volume = item.volume / 100;
                                   // IMPORTANT: set playerRef to longest video's ref
                                   const longestVideo = videos.reduce(
                                     (max, v) => (v.duration > max.duration ? v : max),
@@ -221,32 +242,36 @@ const VideoEditor = () => {
                         </div>
                       );
                     })}
-                    {texts.map((item, index) => (
-                      <div
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedText(item.id);
-                          setTargets([e.currentTarget]);
-                        }}
-                        data-text-id={item.id}
-                        key={item.id}
-                        className="text-item"
-                        style={{
-                          position: "absolute",
-                          left: item.x,
-                          top: item.y,
-                          color: item.color,
-                          fontSize: `${item.fontSize}px`,
-                          opacity: item.opacity / 100,
-                          padding: `${item.padding}px`,
-                          backgroundColor: item.backgroundColor ? "rgba(0,0,0,0.5)" : "transparent",
-                          cursor: "pointer",
-                          userSelect: "none",
-                        }}
-                      >
-                        {item.duration + 0.8 >= currentTime && <span>{item.description}</span>}
-                      </div>
-                    ))}
+                    {texts.map((item) => {
+                      return (
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedText(item.id);
+                            setTargets([e.currentTarget]);
+                          }}
+                          data-text-id={item.id}
+                          key={item.id}
+                          className="text-item rounded-md"
+                          style={{
+                            position: "absolute",
+                            left: item.x,
+                            top: item.y,
+                            color: item.color,
+                            fontSize: `${item.fontSize}px`,
+                            opacity: item.opacity / 100,
+                            padding: `${item.padding}px`,
+                            cursor: "pointer",
+                            userSelect: "none",
+                            fontWeight: item.fontWeight,
+                            backgroundColor: item.backgroundColor || "black",
+                            textDecoration: item.isUnderline ? "underline" : "",
+                          }}
+                        >
+                          {item.duration + 0.8 >= currentTime && <span>{item.description}</span>}
+                        </div>
+                      );
+                    })}
                   </div>
 
                   <Moveable
