@@ -173,7 +173,7 @@ export const useVideoStore = create((set, get) => ({
           startTime: 0,
           endTime: v.originalDuration,
           duration: v.originalDuration,
-          speed: 1
+          speed: 1,
         };
       });
       return {
@@ -194,7 +194,7 @@ export const useVideoStore = create((set, get) => ({
 
   forwardVideo: () => {
     set((state) => {
-      const video = state.videos.find(v => v.id === state.currentVideoId);
+      const video = state.videos.find((v) => v.id === state.currentVideoId);
       const newTime = Math.min(state.currentTime + 10, state.duration);
 
       if (state.playerRef) {
@@ -209,7 +209,7 @@ export const useVideoStore = create((set, get) => ({
 
   rewindVideo: () => {
     set((state) => {
-      const video = state.videos.find(v => v.id === state.currentVideoId);
+      const video = state.videos.find((v) => v.id === state.currentVideoId);
       const newTime = Math.max(state.currentTime - 10, 0);
 
       if (state.playerRef) {
@@ -240,24 +240,24 @@ export const useVideoStore = create((set, get) => ({
       id: uuidv4(),
       description: text,
       opacity: 100,
-      x: containerWidth.width / 2, 
+      x: containerWidth.width / 2,
       y: containerWidth.height / 2,
       fontSize: 18,
-      duration: 20, 
+      duration: 20,
       endTime: 20,
       startTime: 0,
       color: "#ffffff",
       backgroundColor: hasBG,
       padding: 8,
       fontWeight: "normal",
-      width: 200, 
-      height: 40, 
+      width: 200,
+      height: 40,
     };
 
     set((state) => {
-      const newTexts = [...state.texts, newTextObject]; 
+      const newTexts = [...state.texts, newTextObject];
       return {
-        texts: newTexts, 
+        texts: newTexts,
       };
     });
   },
@@ -339,4 +339,121 @@ export const useVideoStore = create((set, get) => ({
     }),
 
   setTextIsDragging: (isDragging) => set({ textIsDragging: isDragging }),
+
+  // images
+  images: [],
+  selectedImageId: "",
+
+  addImageOnTL: (imageData, containerWidth) => {
+    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+
+    if (imageData.size > MAX_SIZE) {
+      return false;
+    }
+
+    const newImage = {
+      id: uuidv4(),
+      src: URL.createObjectURL(imageData),
+      x: containerWidth.width / 2,
+      y: containerWidth.height / 2,
+      width: 200,
+      height: 200,
+      borderRadius: 0,
+      startTime: 0,
+      endTime: 20,
+      duration: 20,
+      opacity: 100,
+    };
+
+    set((state) => ({
+      images: [...state.images, newImage],
+    }));
+    return true;
+  },
+
+  deleteImageFromTL: (ID) =>
+    set((state) => ({
+      images: state.images.filter((i) => i.id !== ID),
+    })),
+
+  setSelectedImage: (ID) => set({ selectedImageId: ID }),
+
+  updateImagePosition: (id, x, y) =>
+    set((state) => ({
+      images: state.images.map((img) => (img.id === id ? { ...img, x, y } : img)),
+    })),
+
+  updateImagesTime: (ID, endTime) => {
+    set((state) => {
+      const newImages = state.images.map((image) => {
+        if (image.id === ID) {
+          const newDuration = endTime - image.startTime;
+          return {
+            ...image,
+            endTime,
+            duration: newDuration,
+            playbackOffset: state.currentTime,
+          };
+        }
+        return image;
+      });
+
+      // Update global duration if image extends beyond current duration
+      const maxImageDuration = Math.max(...newImages.map((i) => i.endTime));
+      const maxVideoDuration = Math.max(...state.videos.map((v) => v.duration));
+      const maxTextDuration = Math.max(...state.texts.map((t) => t.endTime));
+
+      return {
+        images: newImages,
+        duration: Math.max(maxImageDuration, maxVideoDuration, maxTextDuration),
+      };
+    });
+  },
+
+  syncImagePlayback: (currentTime) => {
+    const newImages = state.images.map((image) => ({
+      ...image,
+      playbackOffset: currentTime,
+    }));
+    return {
+      images: newImages,
+    };
+  },
+
+  updateImageDimensions: (ID, w, h) => {
+    set((state) => {
+      const newImages = state.images.map((i) => {
+        if (i.id === ID) {
+          return {
+            ...i,
+            width: w,
+            height: h,
+          };
+        } else {
+          return i;
+        }
+      });
+      return {
+        images: newImages,
+      };
+    });
+  },
+
+  updateImageStyle: (ID, newStyle) => {
+    set((state) => {
+      const newImages = state.images.map((i) => {
+        if (i.id === ID) {
+          return {
+            ...i,
+            ...newStyle,
+          };
+        } else {
+          return i;
+        }
+      });
+      return {
+        images: newImages,
+      };
+    });
+  },
 }));

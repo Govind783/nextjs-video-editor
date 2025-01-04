@@ -1,5 +1,7 @@
 TODO
-
+- optimisation
+- dragging
+- export
 
 DONE ->
 - mapped video drawers to state of the store, for volume and speed

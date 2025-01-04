@@ -16,6 +16,9 @@ const LeftPanel = memo(() => {
   const [openMenu, setOpenMenu] = useState(null);
   const menuRef = useRef(null);
   const videos = useVideoStore((state) => state.videos);
+  const images = useVideoStore((state) => state.images);
+  const addImageOnTL = useVideoStore((state) => state.addImageOnTL);
+  const deleteImageFromTL = useVideoStore((state) => state.deleteImageFromTL);
   const deleteVideo = useVideoStore((state) => state.deleteVideo);
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -187,23 +190,37 @@ const LeftPanel = memo(() => {
 
         {openMenu === "photo" && (
           <MenuContent key={2}>
-            <Tabs defaultValue="your-media" className="w-full">
+            <Tabs defaultValue="upload-new" className="w-full">
               <TabsList className="w-full mb-4">
-                <TabsTrigger value="your-media" className="flex-1">
-                  Your Media
-                </TabsTrigger>
                 <TabsTrigger value="upload-new" className="flex-1">
                   Upload New
+                </TabsTrigger>
+                <TabsTrigger value="your-media" className="flex-1">
+                  Your Media
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="your-media" className="mt-0">
                 <div className="flex flex-wrap gap-5 ustify-start mx-auto max-h-[240px] overflow-y-auto pr-2">
-                  {videos.map((_, index) => (
-                    <div
-                      key={index}
-                      className="w-16 h-16 rounded-lg bg-accent/50 border border-gray-600 flex items-center justify-center cursor-pointer hover:bg-accent transition-colors"
-                    >
-                      <Image className="w-6 h-6 text-muted-foreground" />
+                  {images.length === 0 && (
+                    <div className="w-full text-center text-muted-foreground py-4">No images added</div>
+                  )}
+                  {images.map((item, index) => (
+                    <div className="flex flex-col h-full ">
+                      <div className="relative flex w-full justify-end">
+                        <X
+                          onClick={() => {
+                            deleteImageFromTL(item.id);
+                          }}
+                          className="absolute bg-black pointer-events-auto z-[1] cursor-pointer p-[1px] text-white rounded-full border border-gray-400"
+                          size={20}
+                        />
+                      </div>
+                      <div
+                        key={index}
+                        className="w-16 h-16 rounded-lg bg-accent/50 border border-gray-600 flex items-center justify-center cursor-pointer hover:bg-accent transition-colors"
+                      >
+                        <img src={item.src} className="w-16 h-16 rounded-md" />
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -220,9 +237,23 @@ const LeftPanel = memo(() => {
                   <Input
                     id="photo-upload"
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/jpg,image/png"
                     className="hidden"
-                    onChange={(e) => console.log("Photo file:", e.target.files?.[0])}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (
+                        !addImageOnTL(file, {
+                          width: window.innerWidth - 100,
+                          height: window.innerHeight - 100,
+                        })
+                      ) {
+                        toast({
+                          title: "Image size must be less than 2MB",
+                        });
+                        return;
+                      }
+                      toggleMenu(null);
+                    }}
                   />
                 </Label>
               </TabsContent>
@@ -292,7 +323,7 @@ const LeftPanel = memo(() => {
               <TabsContent value="your-texts" className="mt-0">
                 <div className="flex flex-wrap gap-3 justify-start mx-auto max-h-[240px] overflow-y-auto pr-2">
                   {texts.length === 0 ? (
-                    <div className="w-full text-center text-muted-foreground py-4">No texts added yet</div>
+                    <div className="w-full text-center text-muted-foreground py-4">No texts added</div>
                   ) : (
                     texts.map((text, index) => (
                       <div key={index} className="flex w-full h-full items-center gap-4">

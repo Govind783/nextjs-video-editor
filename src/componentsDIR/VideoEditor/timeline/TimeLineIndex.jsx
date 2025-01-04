@@ -65,6 +65,12 @@ const TimeLineIndex = () => {
     videoId: null,
     handle: null,
   });
+  const images = useVideoStore((state) => state.images);
+  const selectedImageId = useVideoStore((state) => state.selectedImageId);
+  const setSelectedImage = useVideoStore((state) => state.setSelectedImage);
+  const imageRegionsRef = useRef([]);
+  const updateImagesTime = useVideoStore((state) => state.updateImagesTime);
+
   useEffect(() => {
     let maxDuartion = 0;
     for (let i = 0; i < videos.length; i++) {
@@ -103,13 +109,48 @@ const TimeLineIndex = () => {
     }
   };
 
+  const getYPosition = (itemType, index) => {
+    const videoHeight = 50;
+    const textHeight = 30;
+    const imageHeight = 30;
+    const spacing = 15;
+    const baseOffset = 50;
+
+    switch (itemType) {
+      case "video":
+        return index * (videoHeight + spacing) + baseOffset;
+      case "text":
+        return videos.length * (videoHeight + spacing) + index * (textHeight + spacing) + baseOffset + 35;
+      case "image":
+        return (
+          videos.length * (videoHeight + spacing) +
+          texts.length * (textHeight + spacing) +
+          index * (imageHeight + spacing) +
+          baseOffset +
+          35
+        );
+      default:
+        return 0;
+    }
+  };
+
+  const getCalculatedHeight = (videos, texts, images) => {
+    return Math.max(
+      230,
+      videos.length * 60 + 
+        texts.length * 45 + 
+        images.length * 45 + 
+        60 
+    );
+  };
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
 
     const dpr = window.devicePixelRatio || 1;
-    const calculatedHeight = Math.max(230, (videos.length + texts.length) * 60);
+    const calculatedHeight = getCalculatedHeight(videos, texts, images) + 20;
     canvas.width = canvasWidth * dpr;
     canvas.height = calculatedHeight * dpr;
 
@@ -129,7 +170,7 @@ const TimeLineIndex = () => {
       const startX = video.startTime * FPS * scale.zoom * 60 + 6; // the +6 is just for some minor gap between the play ahead pin and the start of our video
       const width = (video.endTime - video.startTime) * FPS * scale.zoom * 60;
       const height = 50;
-      const y = index * (height + 10) + 40;
+      const y = getYPosition("video", index);
 
       videoRegions.current.push({
         id: video.id,
@@ -213,7 +254,7 @@ const TimeLineIndex = () => {
       const startX = text.startTime * FPS * scale.zoom * 60 + 6;
       const width = (text.endTime - text.startTime) * FPS * scale.zoom * 60;
       const height = 30;
-      const y = (videos.length + index) * (height + 10) + 85;
+      const y = getYPosition("text", index);
 
       // Store text region
       textRegionsRef.current.push({
@@ -227,7 +268,7 @@ const TimeLineIndex = () => {
       });
 
       ctx.beginPath();
-      ctx.fillStyle = 'black';
+      ctx.fillStyle = "black";
       ctx.roundRect(startX, y, width, height, 4);
       ctx.fill();
       ctx.closePath();
@@ -269,7 +310,67 @@ const TimeLineIndex = () => {
       const truncatedText = text.description.length > 15 ? `${text.description.substring(0, 15)}...` : text.description;
       ctx.fillText(`Text ${index + 1}: ${truncatedText}`, startX + 10, y + height / 2);
     });
-  }, [videos, scale.zoom, isVideoSelected, canvasWidth, texts, selectedTextId]);
+
+    imageRegionsRef.current = [];
+    images.forEach((image, index) => {
+      const startX = image.startTime * FPS * scale.zoom * 60 + 6;
+      const width = (image.endTime - image.startTime) * FPS * scale.zoom * 60;
+      const height = 30;
+      const y = getYPosition("image", index);
+
+      imageRegionsRef.current.push({
+        id: image.id,
+        bounds: {
+          x: startX,
+          y,
+          width,
+          height,
+        },
+      });
+
+      ctx.beginPath();
+      ctx.fillStyle = "black";
+      ctx.roundRect(startX, y, width, height, 4);
+      ctx.fill();
+      ctx.closePath();
+
+      ctx.beginPath();
+      ctx.strokeStyle = image.id === selectedImageId ? "white" : "#425292";
+      ctx.lineWidth = 1;
+      ctx.roundRect(startX, y, width, height, 4);
+      ctx.stroke();
+      ctx.closePath();
+
+      const handleWidth = 12;
+      ctx.beginPath();
+      ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+      ctx.roundRect(startX + width - handleWidth - 10, y, handleWidth, height, [0, 4, 4, 0]);
+      ctx.fill();
+      ctx.closePath();
+
+      const rightArrowX = startX + width - handleWidth - 11;
+      const arrowLineLength = 8;
+      const arrowSize = 4;
+
+      ctx.beginPath();
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+      ctx.lineWidth = 1;
+
+      ctx.moveTo(rightArrowX - 5, y + height / 2);
+      ctx.lineTo(rightArrowX + arrowLineLength, y + height / 2);
+      ctx.moveTo(rightArrowX + arrowLineLength, y + height / 2);
+      ctx.lineTo(rightArrowX + (arrowLineLength - 5), y + height / 2 - arrowSize);
+      ctx.moveTo(rightArrowX + arrowLineLength, y + height / 2);
+      ctx.lineTo(rightArrowX + (arrowLineLength - 5), y + height / 2 + arrowSize);
+      ctx.stroke();
+      ctx.closePath();
+
+      ctx.fillStyle = "#999";
+      ctx.font = "12px sans-serif";
+      ctx.textBaseline = "middle";
+      ctx.fillText(`Image ${index + 1}`, startX + 10, y + height / 2);
+    });
+  }, [videos, scale.zoom, isVideoSelected, canvasWidth, texts, selectedTextId, images, selectedImageId]);
 
   useEffect(() => {
     console.log(texts);
@@ -296,6 +397,7 @@ const TimeLineIndex = () => {
       if (clickedRegion) {
         setIsVideoSelected(clickedRegion.id);
         setSelectedText(null);
+        setSelectedImage(null);
         return;
       }
 
@@ -310,12 +412,29 @@ const TimeLineIndex = () => {
       if (clickedTextRegion) {
         setSelectedText(clickedTextRegion.id);
         setIsVideoSelected(null);
+        setSelectedImage(null);
+        return; 
+      }
+
+      const clickedImageRegion = imageRegionsRef.current.find(
+        (region) =>
+          x >= region.bounds.x &&
+          x <= region.bounds.x + region.bounds.width &&
+          y >= region.bounds.y &&
+          y <= region.bounds.y + region.bounds.height
+      );
+
+      if (clickedImageRegion) {
+        setSelectedImage(clickedImageRegion.id);
+        setSelectedText(null);
+        setIsVideoSelected(null);
       } else {
+        setSelectedImage(null);
         setSelectedText(null);
         setIsVideoSelected(null);
       }
     },
-    [scrollLeft, videos.length, texts]
+    [scrollLeft, videos.length, texts.length, images.length]
   );
 
   const handleMouseUp = useCallback(() => {
@@ -329,6 +448,22 @@ const TimeLineIndex = () => {
 
           const newDuration = text.endTime - text.startTime;
           updateTextsTime(text.id, text.endTime);
+
+          setTimeout(() => {
+            if (canvasRef.current) {
+              canvasRef.current.style.transition = "";
+            }
+          }, 300);
+        }
+      } else if (dragStateRef.current.imageId) {
+        const image = images.find((img) => img.id === dragStateRef.current.imageId);
+        if (image) {
+          if (canvasRef.current) {
+            canvasRef.current.style.transition = "width 0.3s ease-out";
+          }
+
+          const newDuration = image.endTime - image.startTime;
+          updateImagesTime(image.id, image.endTime);
 
           setTimeout(() => {
             if (canvasRef.current) {
@@ -369,8 +504,9 @@ const TimeLineIndex = () => {
       videoId: null,
       textId: null,
       handle: null,
+      imageId: null,
     };
-  }, [videos, texts]);
+  }, [videos, texts, images]);
 
   const handleMouseDown = useCallback((e) => {
     e.stopPropagation();
@@ -427,6 +563,25 @@ const TimeLineIndex = () => {
             handle: "end",
           };
           setTextIsDragging(true);
+          return;
+        }
+      }
+    }
+
+    for (const region of imageRegionsRef.current) {
+      const { bounds, id } = region;
+      if (y >= bounds.y && y <= bounds.y + bounds.height) {
+        const handleWidth = 12;
+        const tolerance = 8;
+
+        const rightHandleX = bounds.x + bounds.width - handleWidth - 10;
+
+        if (Math.abs(x - rightHandleX) <= tolerance + handleWidth) {
+          dragStateRef.current = {
+            isDragging: true,
+            imageId: id,
+            handle: "end",
+          };
           return;
         }
       }
@@ -496,12 +651,11 @@ const TimeLineIndex = () => {
         }
       }
 
-      
       if (dragStateRef.current.textId) {
         const text = texts.find((t) => t.id === dragStateRef.current.textId);
         if (!text) return;
 
-        const MIN_DELTA = 3; 
+        const MIN_DELTA = 3;
 
         if (dragStateRef.current.handle === "start") {
         } else {
@@ -510,6 +664,20 @@ const TimeLineIndex = () => {
           const newEndTime = Math.max(text.startTime + MIN_DELTA, timePosition);
 
           updateTextsTime(text.id, newEndTime);
+        }
+      }
+
+      if (dragStateRef.current.imageId) {
+        const image = images.find((img) => img.id === dragStateRef.current.imageId);
+        if (!image) return;
+
+        const MIN_DELTA = 3;
+
+        if (dragStateRef.current.handle === "start") {
+        } else {
+          const maxTime = (canvasWidth - TIMELINE_OFFSET_CANVAS_LEFT) / (FPS * scale.zoom * 60);
+          const newEndTime = Math.max(image.startTime + MIN_DELTA, timePosition);
+          updateImagesTime(image.id, newEndTime);
         }
       }
     },
@@ -539,13 +707,13 @@ const TimeLineIndex = () => {
         <div className="relative w-10 flex-none" />
         <div
           style={{
-            height: Math.max(230, (videos.length + texts.length) * 60),
+            height: getCalculatedHeight(videos, texts, images) + 20,
           }}
-          className="relative h-fit  flex-1"
+          className="relative h-fit flex-1"
         >
           <div
             style={{
-              height: Math.max(230, (videos.length + texts.length) * 60),
+              height: getCalculatedHeight(videos, texts, images) + 20
             }}
             className="absolute top-0 w-full"
             ref={containerRef}
@@ -559,7 +727,7 @@ const TimeLineIndex = () => {
                 top: 0,
                 left: TIMELINE_OFFSET_CANVAS_LEFT,
                 width: `${canvasWidth}px`,
-                height: Math.max(230, (videos.length + texts.length) * 60),
+                height: getCalculatedHeight(videos, texts, images) + 20,
                 willChange: "transform",
                 zIndex: 2,
                 pointerEvents: "all",
@@ -574,7 +742,7 @@ const TimeLineIndex = () => {
               position: "absolute",
               width: "calc(100vw - 40px)",
               height: "20px",
-              marginTop: Math.max(162, (videos.length + texts.length) * 60),
+              marginTop: getCalculatedHeight(videos, texts, images) + 20,
             }}
             className="ScrollAreaRootH z-[3]"
           >

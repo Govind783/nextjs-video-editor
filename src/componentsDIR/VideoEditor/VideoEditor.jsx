@@ -28,8 +28,17 @@ const VideoEditor = () => {
   const currentTime = useVideoStore((state) => state.currentTime);
   const texts = useVideoStore((state) => state.texts);
   const setSelectedText = useVideoStore((state) => state.setSelectedText);
+  const selectedTextId = useVideoStore((state) => state.selectedTextId);
+  const selectedImageId = useVideoStore((state) => state.selectedImageId);
   const updateTextStyle = useVideoStore((state) => state.updateTextStyle);
+
+  const images = useVideoStore((state) => state.images);
   const [openMenu, setOpenMenu] = useState(null);
+  const setSelectedImage = useVideoStore((state) => state.setSelectedImage);
+  const updateTextPosition = useVideoStore((state) => state.updateTextPosition);
+
+  const updateImageDimensions = useVideoStore((state) => state.updateImageDimensions);
+  const updateImagePosition = useVideoStore((state) => state.updateImagePosition);
 
   useEffect(() => {
     if (currentVideoId && videoRefs.current[currentVideoId]) {
@@ -46,7 +55,7 @@ const VideoEditor = () => {
       container: viewerRef.current.infiniteViewer.getContainer(),
       boundContainer: true,
       hitRate: 0,
-      selectableTargets: [".video-item", ".text-item"],
+      selectableTargets: [".video-item", ".text-item", ".image-item"],
       selectFromInside: false,
       selectByClick: true,
       toggleContinueSelect: "shift",
@@ -62,7 +71,7 @@ const VideoEditor = () => {
     return () => {
       selection.destroy();
     };
-  }, [videos, texts]);
+  }, [videos, texts, images]);
 
   const setCurrentTime = useVideoStore((state) => state.setCurrentTime);
 
@@ -129,16 +138,16 @@ const VideoEditor = () => {
 
   useEffect(() => {
     if (!selectionRef.current) return;
-    if (isVideoSelected) {
-      const videoElement = document.querySelector(`[data-video-id="${isVideoSelected}"]`);
-      if (videoElement) {
+    if (isVideoSelected || selectedImageId || selectedTextId) {
+      const el = document.querySelector(`[data-id="${isVideoSelected || selectedImageId || selectedTextId}"]`);
+      if (el) {
         setTargets([]);
-        setTargets([videoElement]);
+        setTargets([el]);
       }
     } else {
       setTargets([]);
     }
-  }, [isVideoSelected]);
+  }, [isVideoSelected, selectedImageId, selectedTextId]);
 
   useEffect(() => {
     const handleGlobalClick = (e) => {
@@ -150,6 +159,7 @@ const VideoEditor = () => {
         ".videoButtonRightPanel",
         ".right-panel",
         ".right-panel-menu",
+        ".image-item",
       ];
 
       if (ignoredElements.some((selector) => e.target.closest(selector))) {
@@ -157,6 +167,8 @@ const VideoEditor = () => {
       }
 
       setIsVideoSelected(null);
+      // setSelectedText(null)
+      // setSelectedImage(null)
       setOpenMenu(null);
       setTargets([]);
     };
@@ -212,7 +224,7 @@ const VideoEditor = () => {
                             setCurrentVideoId(item.id);
                             setIsVideoSelected(item.id);
                           }}
-                          data-video-id={item.id}
+                          data-id={item.id}
                           key={item.id}
                           className="video-item"
                           style={{ position: "absolute" }}
@@ -244,34 +256,68 @@ const VideoEditor = () => {
                     })}
                     {texts.map((item) => {
                       return (
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedText(item.id);
-                            setTargets([e.currentTarget]);
-                          }}
-                          data-text-id={item.id}
-                          key={item.id}
-                          className="text-item rounded-md"
-                          style={{
-                            position: "absolute",
-                            left: item.x,
-                            top: item.y,
-                            color: item.color,
-                            fontSize: `${item.fontSize}px`,
-                            opacity: item.opacity / 100,
-                            padding: `${item.padding}px`,
-                            cursor: "pointer",
-                            userSelect: "none",
-                            fontWeight: item.fontWeight,
-                            backgroundColor: item.backgroundColor || "transparent",
-                            textDecoration: item.isUnderline ? "underline" : "",
-                            width: `${item.width}px`,
-                            height: `${item.height}px`,
-                          }}
-                        >
-                          {item.duration + 0.8 >= currentTime && <span>{item.description}</span>}
-                        </div>
+                        item.duration + 0.8 >= currentTime && (
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedText(item.id);
+                              setTargets([e.currentTarget]);
+                            }}
+                            data-id={item.id}
+                            key={item.id}
+                            className="text-item rounded-md"
+                            style={{
+                              position: "absolute",
+                              left: item.x,
+                              top: item.y,
+                              color: item.color,
+                              fontSize: `${item.fontSize}px`,
+                              opacity: item.opacity / 100,
+                              padding: `${item.padding}px`,
+                              cursor: "pointer",
+                              userSelect: "none",
+                              fontWeight: item.fontWeight,
+                              backgroundColor: item.backgroundColor || "transparent",
+                              textDecoration: item.isUnderline ? "underline" : "",
+                              width: `${item.width}px`,
+                              height: `${item.height}px`,
+                              textAlign: "center",
+                              zIndex: 9,
+                            }}
+                          >
+                            <span>{item.description}</span>
+                          </div>
+                        )
+                      );
+                    })}
+
+                    {images.map((item) => {
+                      return (
+                        item.duration + 0.8 >= currentTime && (
+                          <img
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedImage(item.id);
+                              setTargets([e.currentTarget]);
+                            }}
+                            src={item.src}
+                            draggable="false"
+                            data-id={item.id}
+                            key={item.id}
+                            className="image-item"
+                            style={{
+                              position: "absolute",
+                              left: item.x,
+                              top: item.y,
+                              opacity: item.opacity / 100,
+                              cursor: "pointer",
+                              width: `${item.width}px`,
+                              height: `${item.height}px`,
+                              borderRadius: `${item.borderRadius}px`,
+                              userSelect: "none",
+                            }}
+                          ></img>
+                        )
                       );
                     })}
                   </div>
@@ -290,7 +336,9 @@ const VideoEditor = () => {
                       target.style.top = `${top}px`;
                       target.style.left = `${left}px`;
                       if (target.dataset.textId) {
-                        // updateTextPosition(target.dataset.textId, left, top);
+                        updateTextPosition(target.dataset.textId, left, top);
+                      } else if (target.dataset.imageId) {
+                        updateImagePosition(target.dataset.imageId, left, top);
                       }
                     }}
                     onScale={({ target, transform, direction }) => {
@@ -329,6 +377,31 @@ const VideoEditor = () => {
 
                         target.style.left = `${newLeft}px`;
                         target.style.top = `${newTop}px`;
+                      } else if (match && target.dataset.imageId) {
+                        const [scaleX, scaleY] = match[1].split(",").map((v) => parseFloat(v));
+                        const currentWidth = parseFloat(target.style.width);
+                        const currentHeight = parseFloat(target.style.height);
+
+                        const newWidth = currentWidth * scaleX;
+                        const newHeight = currentHeight * scaleY;
+
+                        target.style.width = `${newWidth}px`;
+                        target.style.height = `${newHeight}px`;
+
+                        updateImageDimensions(target.dataset.imageId, newWidth, newHeight);
+
+                        const diffX = currentWidth - newWidth;
+                        const diffY = currentHeight - newHeight;
+
+                        let newLeft = parseFloat(target.style.left || 0) - diffX / 2;
+                        let newTop = parseFloat(target.style.top || 0) - diffY / 2;
+
+                        if (moveX) newLeft += diffX;
+                        if (moveY) newTop += diffY;
+
+                        target.style.left = `${newLeft}px`;
+                        target.style.top = `${newTop}px`;
+                        updateImagePosition(target.dataset.imageId, newLeft, newTop);
                       }
                     }}
                     // onRotate={({ target, transform }) => {
@@ -339,12 +412,31 @@ const VideoEditor = () => {
                         // const textId = target.dataset.textId;
                         const currentFontSize = parseFloat(target.style.fontSize);
                         const heightRatio = height / target.offsetHeight;
-                        const newFontSize = Math.max(13, Math.round(currentFontSize * heightRatio));
+                        // const newFontSize = Math.max(13, Math.round(currentFontSize * heightRatio));
+                        const newFontSize = Math.max(13, Math.round(currentFontSize * Math.sqrt(heightRatio)));
 
                         target.style.fontSize = `${newFontSize}px`;
                         target.style.width = `${width}px`;
                         target.style.height = `${height}px`;
                         updateTextStyle(target.dataset.textId, { fontSize: newFontSize, width, height }); // apply debounce on this later, ig lets update tsrget insteanlty for instat ui feedback but state can be updated in a debounced fashion
+                      } else if (target.dataset.imageId) {
+                        if (direction[1] === 1) {
+                          const currentWidth = target.clientWidth;
+                          const currentHeight = target.clientHeight;
+                          const scaleY = height / currentHeight;
+                          const scale = scaleY;
+
+                          const newWidth = currentWidth * scale;
+                          const newHeight = currentHeight * scale;
+
+                          target.style.width = `${newWidth}px`;
+                          target.style.height = `${newHeight}px`;
+                          updateImageDimensions(target.dataset.imageId, newWidth, newHeight);
+                        } else {
+                          target.style.width = `${width}px`;
+                          target.style.height = `${height}px`;
+                          updateImageDimensions(target.dataset.imageId, width, height);
+                        }
                       } else {
                         if (direction[1] === 1) {
                           const currentWidth = target.clientWidth;

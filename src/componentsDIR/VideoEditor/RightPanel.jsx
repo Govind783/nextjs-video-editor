@@ -7,23 +7,27 @@ import { Separator } from "@/components/ui/separator";
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/CustomDrawer";
 import { memo, useCallback, useEffect, useState } from "react";
 import { useVideoStore } from "@/State/store";
-import { Bold, Italic, Type, Underline, Video, Volume2 } from "lucide-react";
+import { Blend, Bold, Circle, Image, Type, Underline, Video, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const RightPanel = memo(() => {
   const selectedTextId = useVideoStore((state) => state.selectedTextId);
-  const isVideoSelected = useVideoStore((state) => state.isVideoSelected);
+  const selectedVideoId = useVideoStore((state) => state.isVideoSelected);
   const updateTextStyle = useVideoStore((state) => state.updateTextStyle);
   const updateVideoSpeed = useVideoStore((state) => state.updateVideoSpeed);
   const updateVideoVolume = useVideoStore((state) => state.updateVideoVolume);
   const texts = useVideoStore((state) => state.texts);
+  const selectedImageId = useVideoStore((state) => state.selectedImageId);
+  const updateImageStyle = useVideoStore((state) => state.updateImageStyle);
 
   const [isTextDrawerOpen, setIsTextDrawerOpen] = useState(false);
   const [isVideoDrawerOpen, setIsVideoDrawerOpen] = useState(false);
+  const [isImagesDrawerOpen, setIsImagesDrawerOpen] = useState(false);
 
   // Get current text and video states
   const selectedText = useVideoStore((state) => state.texts.find((t) => t.id === selectedTextId));
-  const selectedVideo = useVideoStore((state) => state.videos.find((v) => v.id === isVideoSelected));
+  const selectedVideo = useVideoStore((state) => state.videos.find((v) => v.id === selectedVideoId));
+  const selectedImage = useVideoStore((state) => state.images.find((i) => i.id === selectedImageId));
 
   // Initialize states from store values
   const [showBg, setShowBg] = useState(selectedText?.backgroundColor !== undefined);
@@ -37,30 +41,31 @@ const RightPanel = memo(() => {
       setTextColor(selectedText.color);
     }
     // Reset drawer states when selection changes
-  }, [selectedTextId, isVideoSelected]);
+  }, [selectedTextId, selectedVideoId]);
 
   useEffect(() => {
     setIsTextDrawerOpen((selectedTextId && isTextDrawerOpen) ?? false);
     setIsVideoDrawerOpen((selectedVideo && isVideoDrawerOpen) ?? false);
-  }, [selectedTextId, selectedVideo]);
+    setIsImagesDrawerOpen((selectedImageId && isImagesDrawerOpen) ?? false);
+  }, [selectedTextId, selectedVideo, selectedImageId]);
 
   // Video control handlers
   const handleSpeedChange = useCallback(
     (speed) => {
-      if (isVideoSelected) {
-        updateVideoSpeed(isVideoSelected, speed);
+      if (selectedVideoId) {
+        updateVideoSpeed(selectedVideoId, speed);
       }
     },
-    [isVideoSelected, updateVideoSpeed]
+    [selectedVideoId, updateVideoSpeed]
   );
 
   const handleVolumeChange = useCallback(
     (value) => {
-      if (isVideoSelected) {
-        updateVideoVolume(isVideoSelected, value[0]);
+      if (selectedVideoId) {
+        updateVideoVolume(selectedVideoId, value[0]);
       }
     },
-    [isVideoSelected, updateVideoVolume]
+    [selectedVideoId, updateVideoVolume]
   );
 
   // Text control handlers
@@ -143,19 +148,20 @@ const RightPanel = memo(() => {
     setIsVideoDrawerOpen(true);
   };
 
-  if (!(selectedTextId || isVideoSelected)) return null;
+  if (!(selectedTextId || selectedVideoId || selectedImageId)) return null;
+
 
   return (
     <div className="fixed right-8 z-[4] top-[42%] transform -translate-y-1/2">
       <TooltipProvider>
         <div className="bg-background rounded-xl shadow-lg flex flex-col space-y-3 p-3">
-          {isVideoSelected && (
+          {selectedVideoId && (
             <>
               <MenuButton icon={<Video className="h-6 w-6" />} tooltip="Video settings" onClick={handleVideoClick} />
               {isVideoDrawerOpen && (
                 <Drawer isOpen={isVideoDrawerOpen} setIsOpen={setIsVideoDrawerOpen}>
                   {/* <DrawerTrigger asChild></DrawerTrigger> */}
-                  <DrawerContent className="bg-black h-[99vh] border-l border-gray-700  top-[-22rem]">
+                  <DrawerContent className="bg-black  border-l border-gray-700  top-[-22rem]">
                     <DrawerHeader>
                       <DrawerTitle className="mt-8">Video Settings</DrawerTitle>
                       <DrawerDescription>Adjust video playback settings here.</DrawerDescription>
@@ -216,7 +222,7 @@ const RightPanel = memo(() => {
                     onClick={() => toggleMenu("text")}
                   />
                 </DrawerTrigger> */}
-                  <DrawerContent className={`bg-black h-[99vh] border-l border-gray-700 top-[-22rem]`}>
+                  <DrawerContent className={`bg-black  border-l border-gray-700 top-[-22rem]`}>
                     <DrawerHeader>
                       <DrawerTitle>Text Settings</DrawerTitle>
                       <DrawerDescription>Customize text appearance here.</DrawerDescription>
@@ -239,7 +245,7 @@ const RightPanel = memo(() => {
                               >
                                 {[
                                   { value: "bold", icon: Bold },
-                                  { value: "italic", icon: Italic },
+                                  // { value: "italic", icon: Italic },
                                   { value: "underline", icon: Underline },
                                 ].map(({ value, icon: Icon }) => (
                                   <ToggleGroupItem
@@ -362,6 +368,73 @@ const RightPanel = memo(() => {
                             </div>
                           </div>
                         </Section>
+                      </div>
+                    </div>
+                  </DrawerContent>
+                </Drawer>
+              )}
+            </>
+          )}
+          {selectedImageId && (
+            <>
+              <MenuButton
+                icon={<Image className="h-6 w-6" />}
+                tooltip="Image settings"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsImagesDrawerOpen(true);
+                }}
+              />
+              {isImagesDrawerOpen && (
+                <Drawer isOpen={isImagesDrawerOpen} setIsOpen={setIsImagesDrawerOpen}>
+                  {/* <DrawerTrigger asChild></DrawerTrigger> */}
+                  <DrawerContent className="bg-black  border-l border-gray-700  top-[-22rem]">
+                    <DrawerHeader>
+                      <DrawerTitle className="mt-8">Image Settings</DrawerTitle>
+                      <DrawerDescription>Adjust Image radius and opacity.</DrawerDescription>
+                    </DrawerHeader>
+                    <div onClick={preventDrawerClose} className="p-4 pb-0">
+                      <div className="space-y-20">
+                        <div>
+                          <div className="flex items-center  mb-4 gap-2">
+                            <h4 className="text-lg font-medium">Border radius</h4>
+                            <Circle className="h-6 w-6 text-muted-foreground rounded-full" />
+                          </div>
+                          <div className="flex flex-wrap gap-3">
+                            {selectedImage.borderRadius}px
+                            <Slider
+                              value={[selectedImage.borderRadius]}
+                              onValueChange={(e) => {
+                                updateImageStyle(selectedImageId, {
+                                  borderRadius: e[0],
+                                });
+                              }}
+                              max={30}
+                              step={1}
+                              className="w-full"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex items-center  mb-4 gap-2">
+                            <h4 className="text-lg font-medium">Opacity</h4>
+                            <Blend className="h-6 w-6 text-muted-foreground" />
+                          </div>
+                            {selectedImage.opacity}px
+                          <div className="flex items-center space-x-6">
+                            <Slider
+                              value={[selectedImage.opacity]}
+                              onValueChange={(e) => {
+                                updateImageStyle(selectedImageId, {
+                                  opacity: e[0],
+                                });
+                              }}
+                              max={100}
+                              step={1}
+                              className="w-full"
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </DrawerContent>
