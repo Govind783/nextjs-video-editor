@@ -296,7 +296,7 @@ const LeftPanel = memo(() => {
                     <div className="w-full text-center text-muted-foreground py-4">No images added</div>
                   )}
                   {images.map((item, index) => (
-                    <div className="flex flex-col h-full ">
+                    <div key={index} className="flex flex-col h-full ">
                       <div className="relative flex w-full justify-end">
                         <X
                           onClick={() => {

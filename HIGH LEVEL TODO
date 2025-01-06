@@ -1,8 +1,0 @@
-- trimming with resize on time line (no buttons), done
-- text support, done
-- right panel, done
-- images, done
-- optimisations
-- dragging clip and placting anywhere on the timeline on the time line
-- ffmpeg on frontend when uploading instead of blob
-- and export with ffmpg
