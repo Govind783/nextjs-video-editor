@@ -161,7 +161,7 @@ const RightPanel = memo(() => {
               {isVideoDrawerOpen && (
                 <Drawer isOpen={isVideoDrawerOpen} setIsOpen={setIsVideoDrawerOpen}>
                   {/* <DrawerTrigger asChild></DrawerTrigger> */}
-                  <DrawerContent className="bg-black  border-l border-gray-700  top-[-22rem]">
+                  <DrawerContent className="bg-black  border-l border-gray-700  ">
                     <DrawerHeader>
                       <DrawerTitle className="mt-8">Video Settings</DrawerTitle>
                       <DrawerDescription>Adjust video playback settings here.</DrawerDescription>
@@ -222,7 +222,7 @@ const RightPanel = memo(() => {
                     onClick={() => toggleMenu("text")}
                   />
                 </DrawerTrigger> */}
-                  <DrawerContent className={`bg-black  border-l border-gray-700 top-[-22rem]`}>
+                  <DrawerContent className={`bg-black  border-l border-gray-700 `}>
                     <DrawerHeader>
                       <DrawerTitle>Text Settings</DrawerTitle>
                       <DrawerDescription>Customize text appearance here.</DrawerDescription>
@@ -388,7 +388,7 @@ const RightPanel = memo(() => {
               {isImagesDrawerOpen && (
                 <Drawer isOpen={isImagesDrawerOpen} setIsOpen={setIsImagesDrawerOpen}>
                   {/* <DrawerTrigger asChild></DrawerTrigger> */}
-                  <DrawerContent className="bg-black  border-l border-gray-700  top-[-22rem]">
+                  <DrawerContent className="bg-black  border-l border-gray-700 ">
                     <DrawerHeader>
                       <DrawerTitle className="mt-8">Image Settings</DrawerTitle>
                       <DrawerDescription>Adjust Image radius and opacity.</DrawerDescription>

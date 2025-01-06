@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useState, useRef, useEffect, useCallback } from "react";
-import { Video, Image, Type, Upload, X } from "lucide-react";
+import { Video, Image, Type, Upload, X, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -25,6 +25,7 @@ const LeftPanel = memo(() => {
   const addTextsOnTL = useVideoStore((state) => state.addTextsOnTL);
   const texts = useVideoStore((state) => state.texts);
   const deleteTextFromTL = useVideoStore((state) => state.deleteTextFromTL);
+  const [loadingForConverintAllVideos, setLoadingForConvertingAllVideso] = useState(false);
 
   const toggleMenu = (menu) => {
     setOpenMenu(openMenu === menu ? null : menu);
@@ -106,6 +107,91 @@ const LeftPanel = memo(() => {
     };
   }, []);
 
+  const exportAllVideos = async () => {
+    try {
+      const formData = new FormData();
+
+      const normalizedVideos = videos
+        .map((video) => ({
+          ...video,
+          startTime: parseFloat(video.startTime),
+          endTime: parseFloat(video.endTime),
+          duration: parseFloat(video.duration),
+        }))
+        .sort((a, b) => a.startTime - b.startTime);
+
+      for (const video of normalizedVideos) {
+        const response = await fetch(video.src);
+        const blobData = await response.blob();
+        const file = new File([blobData], `${video.id}.mp4`, { type: "video/mp4" });
+        formData.append("videos", file);
+      }
+
+      const normalizedImages = images.map((image) => ({
+        ...image,
+        startTime: parseFloat(image.startTime),
+        endTime: parseFloat(image.endTime),
+        x: parseInt(image.x),
+        y: parseInt(image.y),
+        width: parseInt(image.width),
+        height: parseInt(image.height),
+        opacity: parseInt(image.opacity),
+      }));
+
+      for (const image of normalizedImages) {
+        const response = await fetch(image.src);
+        const blobData = await response.blob();
+        const file = new File([blobData], `${image.id}.png`, { type: "image/png" });
+        formData.append("images", file);
+      }
+
+      const normalizedTexts = texts.map((text) => ({
+        ...text,
+        startTime: parseFloat(text.startTime),
+        endTime: parseFloat(text.endTime),
+        x: parseInt(text.x),
+        y: parseInt(text.y),
+        fontSize: parseInt(text.fontSize),
+        opacity: parseInt(text.opacity),
+      }));
+
+      formData.append(
+        "metadata",
+        JSON.stringify({
+          videos: normalizedVideos,
+          images: normalizedImages,
+          texts: normalizedTexts,
+        })
+      );
+      formData.append("canvas_width", window.innerWidth.toString());
+      formData.append("canvas_height", "680".toString());
+      setLoadingForConvertingAllVideso(true);
+      const response = await fetch("http://127.0.0.1:8000/process", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        toast({
+          title: "Someting went wrong in encoding the video",
+        });
+      }
+      setLoadingForConvertingAllVideso(false);
+      const finalVideo = await response.blob();
+      const url = URL.createObjectURL(finalVideo);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "final_video.mp4";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setLoadingForConvertingAllVideso(false);
+      toast({
+        title: "Someting went wrong in encoding the video",
+      });
+      console.log(e, "err");
+    }
+  };
   return (
     <div className="fixed bg-black left-4 z-[4] top-[37%] transform -translate-y-1/2" ref={menuRef}>
       <TooltipProvider>
@@ -113,6 +199,11 @@ const LeftPanel = memo(() => {
           <MenuButton icon={<Video className="h-5 w-5" />} tooltip="Upload Video" onClick={() => toggleMenu("video")} />
           <MenuButton icon={<Type className="h-5 w-5" />} tooltip="Add Text" onClick={() => toggleMenu("text")} />
           <MenuButton icon={<Image className="h-5 w-5" />} tooltip="Upload Photo" onClick={() => toggleMenu("photo")} />
+          <MenuButton
+            icon={<Download className="h-5 w-5" />}
+            tooltip="Export and download"
+            onClick={() => toggleMenu("export")}
+          />
         </div>
 
         {openMenu === "video" && (
@@ -345,6 +436,20 @@ const LeftPanel = memo(() => {
                 </div>
               </TabsContent>
             </Tabs>
+          </MenuContent>
+        )}
+        {openMenu === "export" && (
+          <MenuContent key={3}>
+            <p className="text-xl font-semibold mb-5 mt-2">Export and download</p>
+            <Button disabled={loadingForConverintAllVideos} className="w-full" onClick={exportAllVideos}>
+              {!loadingForConverintAllVideos ? (
+                <div className="flex items-center gap-1">
+                  <Loader2 className="animate-spin flex-shrink-0 !w-8 !h-6" />can take 15 seconds
+                </div>
+              ) : (
+                "Export"
+              )}
+            </Button>
           </MenuContent>
         )}
       </TooltipProvider>

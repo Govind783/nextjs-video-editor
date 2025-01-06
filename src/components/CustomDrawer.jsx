@@ -15,12 +15,11 @@ export const DrawerContent = ({ children, className = "" }) => {
 
   return (
     <div
-      className={`fixed top-0 -right-[1.85rem] h-screen w-[31rem] bg-black 
-          transform transition-transform duration-300 ease-in-out 
-          ${isOpen ? "translate-x-0" : "translate-x-full"}
-          ${className}`}
+    className={`fixed -right-[1.85rem] top-[-21.6rem] h-screen w-[31rem] bg-black 
+      transition-transform duration-300 ease-in-out 
+      ${isOpen ? "translate-x-0" : "translate-x-full"}`}
     >
-      <div className="flex w-full justify-end">
+      <div className="flex w-full pt-1 justify-end">
         <X className="absolute cursor-pointer" onClick={() => setIsOpen(false)} />
       </div>
       {children}

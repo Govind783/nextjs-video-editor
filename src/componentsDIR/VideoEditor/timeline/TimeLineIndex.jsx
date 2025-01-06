@@ -655,7 +655,7 @@ const TimeLineIndex = () => {
         const text = texts.find((t) => t.id === dragStateRef.current.textId);
         if (!text) return;
 
-        const MIN_DELTA = 3;
+        const MIN_DELTA = 8;
 
         if (dragStateRef.current.handle === "start") {
         } else {
@@ -671,7 +671,7 @@ const TimeLineIndex = () => {
         const image = images.find((img) => img.id === dragStateRef.current.imageId);
         if (!image) return;
 
-        const MIN_DELTA = 3;
+        const MIN_DELTA = 8;
 
         if (dragStateRef.current.handle === "start") {
         } else {

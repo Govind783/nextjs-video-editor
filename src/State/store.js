@@ -53,6 +53,10 @@ export const useVideoStore = create((set, get) => ({
       isDragging: false,
       speed: 1,
       volume: 100,
+      x: window.innerHeight / 2,
+      y: window.innerHeight / 2,
+      width: videoData.width,
+      height: videoData.height,
     };
 
     set((state) => ({
@@ -225,6 +229,24 @@ export const useVideoStore = create((set, get) => ({
     set((state) => {
       return {
         videos: state.videos.filter((i) => i.id !== ID),
+      };
+    });
+  },
+
+  updateVideosCords: (ID, newCoords) => {
+    set((state) => {
+      const newVideos = state.videos.map((item) => {
+        if (item.id === ID) {
+          return {
+            ...item,
+            ...newCoords,
+          };
+        } else {
+          return item;
+        }
+      });
+      return {
+        videos: newVideos,
       };
     });
   },

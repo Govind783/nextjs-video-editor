@@ -31,6 +31,7 @@ const VideoEditor = () => {
   const selectedTextId = useVideoStore((state) => state.selectedTextId);
   const selectedImageId = useVideoStore((state) => state.selectedImageId);
   const updateTextStyle = useVideoStore((state) => state.updateTextStyle);
+  const updateVideosCords = useVideoStore((state) => state.updateVideosCords);
 
   const images = useVideoStore((state) => state.images);
   const [openMenu, setOpenMenu] = useState(null);
@@ -227,16 +228,23 @@ const VideoEditor = () => {
                           data-id={item.id}
                           key={item.id}
                           className="video-item"
-                          style={{ position: "absolute" }}
+                          style={{
+                            position: "absolute",
+                            transform: `translate(-50%, -50%)`, // Center the element
+                            left: item.x,
+                            top: item.y,
+                            width: item.width,
+                            height: item.height,
+                          }}
                         >
-                          {item.duration + 0.8 >= currentTime && ( // here is it >= coz if u just do > then it removes the video form the dom, not the best solution but for now fine, TODO fix later this is more for a situation when the video ends and the guy presses on play again
+                          {item.duration + 0.8 >= currentTime && (
                             <video
                               ref={(el) => {
                                 if (el) {
                                   videoRefs.current[item.id] = el;
                                   el.playbackRate = item.speed;
                                   el.volume = item.volume / 100;
-                                  // IMPORTANT: set playerRef to longest video's ref
+                                  // Set playerRef to longest video's ref
                                   const longestVideo = videos.reduce(
                                     (max, v) => (v.duration > max.duration ? v : max),
                                     videos[0]
@@ -246,7 +254,10 @@ const VideoEditor = () => {
                                   }
                                 }
                               }}
-                              style={{ width: "100%", height: "100%" }}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                              }}
                               className="rounded-md"
                               src={item.src}
                             />
@@ -264,10 +275,12 @@ const VideoEditor = () => {
                               setTargets([e.currentTarget]);
                             }}
                             data-id={item.id}
+                            data-text-id={item.id}
                             key={item.id}
                             className="text-item rounded-md"
                             style={{
                               position: "absolute",
+                              transform: `translate(-50%, -50%)`, // Center the element
                               left: item.x,
                               top: item.y,
                               color: item.color,
@@ -283,6 +296,9 @@ const VideoEditor = () => {
                               height: `${item.height}px`,
                               textAlign: "center",
                               zIndex: 9,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
                             }}
                           >
                             <span>{item.description}</span>
@@ -294,29 +310,38 @@ const VideoEditor = () => {
                     {images.map((item) => {
                       return (
                         item.duration + 0.8 >= currentTime && (
-                          <img
+                          <div
+                            data-id={item.id}
+                            data-image-id={item.id}
+                            style={{
+                              position: "absolute",
+                              transform: `translate(-50%, -50%)`, // Center the element
+                              left: item.x,
+                              top: item.y,
+                              width: `${item.width}px`,
+                              height: `${item.height}px`,
+                            }}
+                            className="image-item"
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedImage(item.id);
-                              setTargets([e.currentTarget]);
+                              setTargets([e.currentTarget]); // Changed from e.target to e.currentTarget
                             }}
-                            src={item.src}
-                            draggable="false"
-                            data-id={item.id}
-                            key={item.id}
-                            className="image-item"
-                            style={{
-                              position: "absolute",
-                              left: item.x,
-                              top: item.y,
-                              opacity: item.opacity / 100,
-                              cursor: "pointer",
-                              width: `${item.width}px`,
-                              height: `${item.height}px`,
-                              borderRadius: `${item.borderRadius}px`,
-                              userSelect: "none",
-                            }}
-                          ></img>
+                          >
+                            <img
+                              src={item.src}
+                              draggable="false"
+                              key={item.id}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                opacity: item.opacity / 100,
+                                cursor: "pointer",
+                                borderRadius: `${item.borderRadius}px`,
+                                userSelect: "none",
+                              }}
+                            />
+                          </div>
                         )
                       );
                     })}
@@ -335,7 +360,9 @@ const VideoEditor = () => {
                     onDrag={({ target, top, left }) => {
                       target.style.top = `${top}px`;
                       target.style.left = `${left}px`;
-                      if (target.dataset.textId) {
+                      if (target.classList.contains("video-item")) {
+                        updateVideosCords(target.dataset.id, { x: left, y: top });
+                      } else if (target.dataset.textId) {
                         updateTextPosition(target.dataset.textId, left, top);
                       } else if (target.dataset.imageId) {
                         updateImagePosition(target.dataset.imageId, left, top);
@@ -351,44 +378,16 @@ const VideoEditor = () => {
                       const scaleRegex = /scale\(([^)]+)\)/;
                       const match = target.style.transform.match(scaleRegex);
 
-                      if (match && target.dataset.textId) {
+                      if (match) {
                         const [scaleX, scaleY] = match[1].split(",").map((v) => parseFloat(v));
-                        const currentWidth = parseFloat(target.style.width);
-                        const currentHeight = parseFloat(target.style.height);
+                        const currentWidth = parseFloat(target.style.width || target.clientWidth);
+                        const currentHeight = parseFloat(target.style.height || target.clientHeight);
 
                         const newWidth = currentWidth * scaleX;
                         const newHeight = currentHeight * scaleY;
 
                         target.style.width = `${newWidth}px`;
                         target.style.height = `${newHeight}px`;
-
-                        updateTextDimensions(target.dataset.textId, {
-                          width: newWidth,
-                          height: newHeight,
-                        });
-                        const diffX = currentWidth - newWidth;
-                        const diffY = currentHeight - newHeight;
-
-                        let newLeft = parseFloat(target.style.left || 0) - diffX / 2;
-                        let newTop = parseFloat(target.style.top || 0) - diffY / 2;
-
-                        if (moveX) newLeft += diffX;
-                        if (moveY) newTop += diffY;
-
-                        target.style.left = `${newLeft}px`;
-                        target.style.top = `${newTop}px`;
-                      } else if (match && target.dataset.imageId) {
-                        const [scaleX, scaleY] = match[1].split(",").map((v) => parseFloat(v));
-                        const currentWidth = parseFloat(target.style.width);
-                        const currentHeight = parseFloat(target.style.height);
-
-                        const newWidth = currentWidth * scaleX;
-                        const newHeight = currentHeight * scaleY;
-
-                        target.style.width = `${newWidth}px`;
-                        target.style.height = `${newHeight}px`;
-
-                        updateImageDimensions(target.dataset.imageId, newWidth, newHeight);
 
                         const diffX = currentWidth - newWidth;
                         const diffY = currentHeight - newHeight;
@@ -401,14 +400,68 @@ const VideoEditor = () => {
 
                         target.style.left = `${newLeft}px`;
                         target.style.top = `${newTop}px`;
-                        updateImagePosition(target.dataset.imageId, newLeft, newTop);
+
+                        if (target.classList.contains("video-item")) {
+                          updateVideosCords(target.dataset.id, {
+                            width: newWidth,
+                            height: newHeight,
+                            x: newLeft,
+                            y: newTop,
+                          });
+                        } else if (target.dataset.textId) {
+                          updateTextStyle(target.dataset.textId, {
+                            width: newWidth,
+                            height: newHeight,
+                          });
+                          updateTextPosition(target.dataset.textId, newLeft, newTop);
+                        } else if (target.classList.contains("image-item")) {
+                          // Changed to check for class instead of dataset
+                          updateImageDimensions(target.dataset.imageId, newWidth, newHeight);
+                          updateImagePosition(target.dataset.imageId, newLeft, newTop);
+                        }
                       }
                     }}
                     // onRotate={({ target, transform }) => {
                     //   target.style.transform = transform;
                     // }}
                     onResize={({ target, width, height, direction }) => {
-                      if (target.dataset.textId) {
+                      if (target.classList.contains("video-item")) {
+                        if (direction[1] === 1) {
+                          const currentWidth = target.clientWidth;
+                          const currentHeight = target.clientHeight;
+                          const scaleY = height / currentHeight;
+                          const scale = scaleY;
+
+                          const newWidth = currentWidth * scale;
+                          const newHeight = currentHeight * scale;
+
+                          target.style.width = `${newWidth}px`;
+                          target.style.height = `${newHeight}px`;
+
+                          const left = parseFloat(target.style.left || 0);
+                          const top = parseFloat(target.style.top || 0);
+
+                          updateVideosCords(target.dataset.id, {
+                            width: newWidth,
+                            height: newHeight,
+                            x: left, 
+                            y: top,
+                          });
+                        } else {
+                          target.style.width = `${width}px`;
+                          target.style.height = `${height}px`;
+
+                          const left = parseFloat(target.style.left || 0);
+                          const top = parseFloat(target.style.top || 0);
+
+                          updateVideosCords(target.dataset.id, {
+                            width: width,
+                            height: height,
+                            x: left, 
+                            y: top,
+                          });
+                        }
+                      } else if (target.dataset.textId) {
                         // const textId = target.dataset.textId;
                         const currentFontSize = parseFloat(target.style.fontSize);
                         const heightRatio = height / target.offsetHeight;
@@ -436,19 +489,6 @@ const VideoEditor = () => {
                           target.style.width = `${width}px`;
                           target.style.height = `${height}px`;
                           updateImageDimensions(target.dataset.imageId, width, height);
-                        }
-                      } else {
-                        if (direction[1] === 1) {
-                          const currentWidth = target.clientWidth;
-                          const currentHeight = target.clientHeight;
-                          const scaleY = height / currentHeight;
-                          const scale = scaleY;
-
-                          target.style.width = `${currentWidth * scale}px`;
-                          target.style.height = `${currentHeight * scale}px`;
-                        } else {
-                          target.style.width = `${width}px`;
-                          target.style.height = `${height}px`;
                         }
                       }
                     }}
