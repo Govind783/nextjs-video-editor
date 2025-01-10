@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useState, useRef, useEffect, useCallback } from "react";
-import { Video, Image, Type, Upload, X, Download, Loader2 } from "lucide-react";
+import { Video, Image, Type, Upload, X, Download, Loader2, Github } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useVideoStore } from "@/State/store";
 import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
 
 const LeftPanel = memo(() => {
   const { toast } = useToast();
@@ -441,15 +442,28 @@ const LeftPanel = memo(() => {
         {openMenu === "export" && (
           <MenuContent key={3}>
             <p className="text-xl font-semibold mb-5 mt-2">Export and download</p>
-            <Button disabled={loadingForConverintAllVideos} className="w-full" onClick={exportAllVideos}>
-              {!loadingForConverintAllVideos ? (
+            <Button disabled={true} className="w-full" onClick={exportAllVideos}>
+              {loadingForConverintAllVideos ? (
                 <div className="flex items-center gap-1">
-                  <Loader2 className="animate-spin flex-shrink-0 !w-8 !h-6" />can take 15 seconds
+                  <Loader2 className="animate-spin flex-shrink-0 !w-8 !h-6" />
+                  can take 15 seconds
                 </div>
               ) : (
                 "Export"
               )}
             </Button>
+
+            <p className="text-sm text-gray-300 my-4 w-[250px]">
+              Export temporarily disabled: After a surge in traffic from the demo video, server costs became
+              unsustainable. The backend implementation with FFMPEG is 100% functional, Check out the backend code on{" "}
+              <Link
+                href="https://github.com/Govind783/nextjs-video-editor"
+                target="_blank"
+                className="inline-flex items-center hover:text-white"
+              >
+                GitHub <Github className="ml-1" size={16} />
+              </Link>
+            </p>
           </MenuContent>
         )}
       </TooltipProvider>
