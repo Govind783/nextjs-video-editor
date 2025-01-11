@@ -1,40 +1,81 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Video Editor
 
-## Getting Started
+A sleek, browser-based video editor made in next JS and shad CN. Stack videos, images, and text with precise timing control and real-time preview and export with FFMPEG.
 
-First, run the development server:
+## Demo Video
+https://github.com/user-attachments/assets/386c95e3-29c4-40c1-8463-6d344adaaafe
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Features
 
-You can start editing the page by modifying `pages/index.js`. The page auto-updates as you edit the file.
+- Drag & drop media handling
+- Multi-track video, image, and text composition
+- trimming the vieo by grabing it from arrow at right end
+- Frame-accurate trimming with visual preview
+- Live playback with frame-by-frame preview marker
+- Customizable text overlays with full styling control
+- Video speed and volume adjustment
+- forward rewind by 10 seconds buttons
+- resize media by shrinking and incrementing media by selecting them
+- Export to single video file
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.js`.
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+# Tech stack
+- Next JS
+- tailwind
+- zustand
+- shad CN
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+# UI images Showcase
 
-## Learn More
+### Timeline and Preview
+The main workspace with preview window and multi-track timeline
+![Starting screen](https://live.staticflickr.com/65535/54259935250_bb47275d1a_k.jpg)
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Text Customization
+Fine-tune text appearance with color, background, and positioning, width, height, border-radius, etc
+![Text modification panel](https://live.staticflickr.com/65535/54259749534_f40f5693db_k.jpg)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+### Video Controls  
+Adjust speed, volume, and trim points
+![Video adjustment panel](https://live.staticflickr.com/65535/54259737473_4a0d7938ca_k.jpg)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+### Image Editing
+Control size, position, and visual effects
+![Image modification panel](https://live.staticflickr.com/65535/54259749544_29bedf1e09_k.jpg)
+
+---
+
+### Multi-track Layout
+Stack and arrange multiple videos and text overlays
+![Multiple tracks view](https://live.staticflickr.com/65535/54259738773_f060c635d0_k.jpg)
+
+---
+
+### Visual Timeline
+Precise control with frame markers and playhead
+![Timeline view](https://live.staticflickr.com/65535/54259935260_8453ef7063_k.jpg)
+
+---
+
+### Export Options
+Convert your composition into a single video file
+![Export screen](https://live.staticflickr.com/65535/54259750839_e5515289b9_k.jpg)
+
+## Development and todo
+- transitions
+- spliting
+- dragging media files across the TL canvas
+
+---
+Note: This is a work in progress. Bug reports and feature requests welcome.
+[Backend repo](https://github.com/Govind783/video-editor-backend)
+
+
+DO star the repo 🌟
