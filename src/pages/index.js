@@ -2,7 +2,7 @@ import { Inter } from "next/font/google";
 import VideoEditor from "@/componentsDIR/VideoEditor/VideoEditor";
 import { AlertCircle, Laptop } from "lucide-react";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"] });//
 
 export default function Home() {
   return (
