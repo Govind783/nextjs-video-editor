@@ -3,7 +3,7 @@
 A sleek, browser-based video editor made in next JS and shad CN. Stack videos, images, and text with precise timing control and real-time preview and export with FFMPEG.
 
 ## Demo Video
-https://github.com/user-attachments/assets/386c95e3-29c4-40c1-8463-6d344adaaafe
+https://github.com/user-attachments/assets/147cec99-d05a-4f89-a89e-02abf7422623
 
 
 ## Features
