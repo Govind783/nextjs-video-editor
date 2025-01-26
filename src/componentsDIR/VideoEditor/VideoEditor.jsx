@@ -312,6 +312,7 @@ const VideoEditor = () => {
                         item.duration + 0.8 >= currentTime && (
                           <div
                             data-id={item.id}
+                            key={item.id}
                             data-image-id={item.id}
                             style={{
                               position: "absolute",
@@ -331,7 +332,7 @@ const VideoEditor = () => {
                             <img
                               src={item.src}
                               draggable="false"
-                              key={item.id}
+                              
                               style={{
                                 width: "100%",
                                 height: "100%",

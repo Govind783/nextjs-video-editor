@@ -85,14 +85,16 @@ const PlayheadPosition = memo(({ scrollLeft }) => {
 
         if (isValidTime) {
           setLocalPosition(newPosition);
-          // Find longest video that contains this time point
           const targetVideo = videos
-            .filter((v) => time <= v.duration)
-            .reduce((max, video) => (video.duration > max.duration ? video : max), videos[0]);
-
-          if (targetVideo && playerRef) {
-            playerRef.currentTime = time * targetVideo.speed;
-          }
+            .filter((v) => time <= v.duration)          
+            if(Array.isArray(targetVideo) && targetVideo.length > 0){
+              targetVideo.forEach((video) => {
+                const individualVideo = document.querySelector(`div[data-id="${video.id}"] > video`)
+                individualVideo.currentTime = time * video.speed;
+              })
+            }else{
+              playerRef.currentTime = time * targetVideo.speed;
+            }
         }
       }
     },

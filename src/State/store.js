@@ -201,8 +201,15 @@ export const useVideoStore = create((set, get) => ({
       const video = state.videos.find((v) => v.id === state.currentVideoId);
       const newTime = Math.min(state.currentTime + 10, state.duration);
 
-      if (state.playerRef) {
+      if (state.videos.length == 1 && state.playerRef) {
         state.playerRef.currentTime = newTime * video.speed;
+      } else if (state.videos.length > 1) {
+        const validVideos = state.videos.filter((v) => v.duration > state.currentTime);
+        if (validVideos)
+          validVideos.forEach((vid) => {
+            const individualVideo = document.querySelector(`div[data-id="${vid.id}"] > video`);
+            individualVideo.currentTime = newTime;
+          });
       }
 
       return {
@@ -215,15 +222,22 @@ export const useVideoStore = create((set, get) => ({
     set((state) => {
       const video = state.videos.find((v) => v.id === state.currentVideoId);
       const newTime = Math.max(state.currentTime - 10, 0);
-
-      if (state.playerRef) {
+      if (state.videos.length == 1 && state.playerRef) {
         state.playerRef.currentTime = newTime * video.speed;
+      } else if (state.videos.length > 1) {
+        const validVideos = state.videos.filter((v) => v.duration > state.currentTime);
+        if (validVideos)
+          validVideos.forEach((vid) => {
+            const individualVideo = document.querySelector(`div[data-id="${vid.id}"] > video`);
+            individualVideo.currentTime = newTime;
+          });
       }
+   
       return {
         currentTime: newTime,
       };
     });
-  },
+   },
 
   deleteVideo: (ID) => {
     set((state) => {

@@ -88,6 +88,10 @@ const LeftPanel = memo(() => {
           };
           toggleMenu(null);
         };
+        videos.forEach((vid) => {
+         const individualVideo =  document.querySelector(`div[data-id="${vid.id}"] > video`);
+          if(individualVideo) individualVideo.currentTime = 0
+        })
         reader.readAsArrayBuffer(file);
       }
     },
