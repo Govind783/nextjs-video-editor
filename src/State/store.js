@@ -1,5 +1,8 @@
 import { create } from "zustand";
 import { v4 as uuidv4 } from "uuid";
+import { findVideoAndUpdatTime } from "@/helpers/videoFinder";
+
+const videoFinder = findVideoAndUpdatTime()
 
 export const useVideoStore = create((set, get) => ({
   videos: [],
@@ -207,7 +210,7 @@ export const useVideoStore = create((set, get) => ({
         const validVideos = state.videos.filter((v) => v.duration > state.currentTime);
         if (validVideos)
           validVideos.forEach((vid) => {
-            const individualVideo = document.querySelector(`div[data-id="${vid.id}"] > video`);
+            const individualVideo = videoFinder(vid.id)
             individualVideo.currentTime = newTime;
           });
       }
@@ -228,7 +231,7 @@ export const useVideoStore = create((set, get) => ({
         const validVideos = state.videos.filter((v) => v.duration > state.currentTime);
         if (validVideos)
           validVideos.forEach((vid) => {
-            const individualVideo = document.querySelector(`div[data-id="${vid.id}"] > video`);
+            const individualVideo = videoFinder(vid.id)
             individualVideo.currentTime = newTime;
           });
       }

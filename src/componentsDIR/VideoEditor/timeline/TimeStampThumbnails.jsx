@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, memo, useCallback } from "react";
 import { useVideoStore } from "@/State/store";
+import { findVideoAndUpdatTime } from "@/helpers/videoFinder";
 
 const FPS = 60;
 
@@ -88,12 +89,11 @@ const PlayheadPosition = memo(({ scrollLeft }) => {
           const targetVideo = videos
             .filter((v) => time <= v.duration)          
             if(Array.isArray(targetVideo) && targetVideo.length > 0){
+              const videoFinder = findVideoAndUpdatTime()
               targetVideo.forEach((video) => {
-                const individualVideo = document.querySelector(`div[data-id="${video.id}"] > video`)
+                const individualVideo = videoFinder(video.id)
                 individualVideo.currentTime = time * video.speed;
               })
-            }else{
-              playerRef.currentTime = time * targetVideo.speed;
             }
         }
       }
