@@ -4,11 +4,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { HexColorPicker } from "react-colorful";
 import { Separator } from "@/components/ui/separator";
-import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/CustomDrawer";
 import { memo, useCallback, useEffect, useState } from "react";
 import { useVideoStore } from "@/State/store";
-import { Blend, Bold, Circle, Image, Type, Underline, Video, Volume2 } from "lucide-react";
+import { Blend, Bold, Circle, CircleOff, Contrast, Image, Sun, Type, Underline, Video, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 const RightPanel = memo(() => {
   const selectedTextId = useVideoStore((state) => state.selectedTextId);
@@ -33,6 +33,12 @@ const RightPanel = memo(() => {
   const [showBg, setShowBg] = useState(selectedText?.backgroundColor !== undefined);
   const [bgColor, setBgColor] = useState(selectedText?.backgroundColor || "#000000");
   const [textColor, setTextColor] = useState(selectedText?.color || "#FFFFFF");
+  const [showControls, setShowControls] = useState({
+    grayScale: false,
+    blur: false,
+    contrast: false,
+    brightness: false,
+  });
 
   useEffect(() => {
     if (selectedText) {
@@ -148,86 +154,102 @@ const RightPanel = memo(() => {
     setIsVideoDrawerOpen(true);
   };
 
+  const toggleControl = (styleKEY) => {
+    setShowControls((prev) => {
+      return {
+        ...prev,
+        [styleKEY]: !prev[styleKEY],
+      };
+    });
+    updateImageStyle(selectedImageId, {
+      [styleKEY]: !showControls[styleKEY],
+    });
+  };
+
+
   if (!(selectedTextId || selectedVideoId || selectedImageId)) return null;
 
-
   return (
-    <div className="fixed right-8 z-[4] top-[42%] transform -translate-y-1/2">
-      <TooltipProvider>
-        <div className="bg-background rounded-xl shadow-lg flex flex-col space-y-3 p-3">
+    <div className="">
+      <Sheet open={isTextDrawerOpen || isVideoDrawerOpen || isImagesDrawerOpen} modal={false}>
+        <SheetTrigger className="fixed left-4 z-10 top-4 flex flex-col gap-4">
           {selectedVideoId && (
-            <>
-              <MenuButton icon={<Video className="h-6 w-6" />} tooltip="Video settings" onClick={handleVideoClick} />
-              {isVideoDrawerOpen && (
-                <Drawer isOpen={isVideoDrawerOpen} setIsOpen={setIsVideoDrawerOpen}>
-                  {/* <DrawerTrigger asChild></DrawerTrigger> */}
-                  <DrawerContent className="bg-black  border-l border-gray-700  ">
-                    <DrawerHeader>
-                      <DrawerTitle className="mt-8">Video Settings</DrawerTitle>
-                      <DrawerDescription>Adjust video playback settings here.</DrawerDescription>
-                    </DrawerHeader>
-                    <div onClick={preventDrawerClose} className="p-4 pb-0">
-                      <div className="space-y-10">
-                        <div>
-                          <h4 className="text-lg font-medium mb-4">Playback Speed</h4>
-                          <div className="flex flex-wrap gap-3">
-                            {[0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map((speed) => (
-                              <button
-                                key={speed}
-                                onClick={() => handleSpeedChange(speed)}
-                                className={`px-4 py-2 border border-gray-700 text-sm font-medium rounded-full transition-colors ${
-                                  speed === selectedVideo.speed
-                                    ? "bg-white text-black"
-                                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                                }`}
-                              >
-                                {speed}x
-                              </button>
-                            ))}
-                          </div>
+            <div className="">
+              <MenuButton icon={<Video className="h-6 w-6" />} onClick={handleVideoClick} tooltip={"Video Settings"} />
+            </div>
+          )}
+          {selectedImageId && (
+            <MenuButton
+              icon={<Image className="h-6 w-6" />}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsImagesDrawerOpen(true);
+              }}
+              tooltip={"Image settings"}
+            />
+          )}
+          {selectedTextId && texts.length > 0 && (
+            <MenuButton
+              icon={<Type className="h-6 w-6" />}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsTextDrawerOpen(true); //
+              }}
+              tooltip={"Text Settings"}
+            />
+          )}
+        </SheetTrigger>
+        <SheetContent onClick={preventDrawerClose} className="h-[94vh] noScrollbar overflow-y-auto !p-[1.2rem] sm:max-w-[31rem] border-l-gray-600">
+          <SheetHeader>
+            <SheetTitle></SheetTitle>
+            <SheetDescription className="">
+              {selectedVideoId && (
+                <>
+                  <p className="text-xl font-bold">Video Settings</p>
+                  {/* <div>Adjust video playback settings here.</div> */}
+                  <div className=" pb-0 mt-5">
+                    <div className="space-y-10">
+                      <div>
+                        <h4 className="text-lg font-medium mb-4">Playback Speed</h4>
+                        <div className="flex flex-wrap gap-3">
+                          {[0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map((speed) => (
+                            <button
+                              key={speed}
+                              onClick={() => handleSpeedChange(speed)}
+                              className={`px-4 py-2 border border-gray-700 text-sm font-medium rounded-full transition-colors ${
+                                speed === selectedVideo.speed
+                                  ? "bg-white text-black"
+                                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                              }`}
+                            >
+                              {speed}x
+                            </button>
+                          ))}
                         </div>
-                        <div>
-                          <h4 className="text-lg font-medium mb-4">Volume</h4>
-                          <div className="flex items-center space-x-6">
-                            <Volume2 className="h-6 w-6 text-muted-foreground" />
-                            <Slider
-                              value={[selectedVideo.volume]}
-                              onValueChange={handleVolumeChange}
-                              max={100}
-                              step={1}
-                              className="w-full"
-                            />
-                          </div>
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-medium mb-4">Volume</h4>
+                        <div className="flex items-center space-x-6">
+                          <Volume2 className="h-6 w-6 text-muted-foreground" />
+                          <Slider
+                            value={[selectedVideo.volume]}
+                            onValueChange={handleVolumeChange}
+                            max={100}
+                            step={1}
+                            className="w-full"
+                          />
                         </div>
                       </div>
                     </div>
-                  </DrawerContent>
-                </Drawer>
+                  </div>
+                </>
               )}
-            </>
-          )}
-          {selectedTextId && texts.length > 0 && (
-            <>
-              <MenuButton
-                icon={<Type className="h-6 w-6" />}
-                tooltip="Text settings"
-                onClick={() => setIsTextDrawerOpen(true)}
-              />
               {isTextDrawerOpen && (
-                <Drawer isOpen={isTextDrawerOpen} setIsOpen={setIsTextDrawerOpen}>
-                  {/* <DrawerTrigger asChild>
-                  <MenuButton
-                    icon={<Type className="h-6 w-6" />}
-                    tooltip="Text settings"
-                    onClick={() => toggleMenu("text")}
-                  />
-                </DrawerTrigger> */}
-                  <DrawerContent className={`bg-black  border-l border-gray-700 `}>
-                    <DrawerHeader>
-                      <DrawerTitle>Text Settings</DrawerTitle>
-                      <DrawerDescription>Customize text appearance here.</DrawerDescription>
-                    </DrawerHeader>
-                    <div className="p-4 pb-0" onClick={preventDrawerClose}>
+                <>
+                  {/* <p className="text-xl font-bold">Text Settings</p> */}
+                  <div>
+                    {/* <p>Customize text appearance here.</p> */}
+                    <div className="pb-0" onClick={preventDrawerClose}>
                       <div className="flex flex-col h-[88vh] overflow-y-auto gap-9">
                         <Section title="Font Properties">
                           <div className="space-y-10">
@@ -237,9 +259,9 @@ const RightPanel = memo(() => {
                                 type="multiple"
                                 className="justify-start space-x-2"
                                 value={[
-                                  selectedText.fontWeight === "bold" && "bold",
-                                  selectedText.isItalic && "italic",
-                                  selectedText.isUnderline && "underline",
+                                  selectedText?.fontWeight === "bold" && "bold",
+                                  selectedText?.isItalic && "italic",
+                                  selectedText?.isUnderline && "underline",
                                 ].filter(Boolean)}
                                 onValueChange={handleFontStyleToggle}
                               >
@@ -267,7 +289,7 @@ const RightPanel = memo(() => {
                               <div className="flex items-center space-x-4">
                                 <Slider
                                   id="font-size"
-                                  value={[selectedText.fontSize]}
+                                  value={[selectedText?.fontSize]}
                                   onValueChange={(e) => {
                                     handleFontSizeChange(e, "fontSize");
                                   }}
@@ -276,49 +298,9 @@ const RightPanel = memo(() => {
                                   step={1}
                                   className="flex-grow"
                                 />
-                                <span className="text-sm font-medium w-8 text-center">{selectedText.fontSize}px</span>
+                                <span className="text-sm font-medium w-8 text-center">{selectedText?.fontSize}px</span>
                               </div>
                             </div>
-
-                            {/* <div>
-                              <label htmlFor="Width" className="text-sm font-medium mb-2 block">
-                                Width
-                              </label>
-                              <div className="flex items-center space-x-4">
-                                <Slider
-                                  id="Width"
-                                  value={[selectedText.width]}
-                                  onValueChange={(e) => {
-                                    handleFontSizeChange(e, "width");
-                                  }}
-                                  max={500}
-                                  min={100}
-                                  step={1}
-                                  className="flex-grow"
-                                />
-                                <span className="text-sm font-medium w-8 text-center">{selectedText.width}px</span>
-                              </div>
-                            </div>
-
-                            <div>
-                              <label htmlFor="height" className="text-sm font-medium mb-2 block">
-                                Height
-                              </label>
-                              <div className="flex items-center space-x-4">
-                                <Slider
-                                  id="height"
-                                  value={[selectedText.height]}
-                                  onValueChange={(e) => {
-                                    handleFontSizeChange(e, "height");
-                                  }}
-                                  max={300}
-                                  min={50}
-                                  step={1}
-                                  className="flex-grow"
-                                />
-                                <span className="text-sm font-medium w-8 text-center">{selectedText.height}px</span>
-                              </div>
-                            </div> */}
                           </div>
                         </Section>
 
@@ -358,52 +340,37 @@ const RightPanel = memo(() => {
                             <div className="flex items-center space-x-4">
                               <Slider
                                 id="opacity"
-                                value={[selectedText.opacity]}
+                                value={[selectedText?.opacity]}
                                 onValueChange={handleOpacityChange}
                                 max={100}
                                 step={1}
                                 className="flex-grow"
                               />
-                              <span className="text-sm font-medium w-8 text-center">{selectedText.opacity}%</span>
+                              <span className="text-sm font-medium w-8 text-center">{selectedText?.opacity}%</span>
                             </div>
                           </div>
                         </Section>
                       </div>
                     </div>
-                  </DrawerContent>
-                </Drawer>
+                  </div>
+                </>
               )}
-            </>
-          )}
-          {selectedImageId && (
-            <>
-              <MenuButton
-                icon={<Image className="h-6 w-6" />}
-                tooltip="Image settings"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsImagesDrawerOpen(true);
-                }}
-              />
+
               {isImagesDrawerOpen && (
-                <Drawer isOpen={isImagesDrawerOpen} setIsOpen={setIsImagesDrawerOpen}>
-                  {/* <DrawerTrigger asChild></DrawerTrigger> */}
-                  <DrawerContent className="bg-black  border-l border-gray-700 ">
-                    <DrawerHeader>
-                      <DrawerTitle className="mt-8">Image Settings</DrawerTitle>
-                      <DrawerDescription>Adjust Image radius and opacity.</DrawerDescription>
-                    </DrawerHeader>
-                    <div onClick={preventDrawerClose} className="p-4 pb-0">
-                      <div className="space-y-20">
+                <>
+                  <p className="text-xl font-bold">Image Settings</p>
+                  <div className="mt-5">
+                    <div onClick={preventDrawerClose} className="pb-0">
+                      <div className="space-y-16">
                         <div>
                           <div className="flex items-center  mb-4 gap-2">
                             <h4 className="text-lg font-medium">Border radius</h4>
                             <Circle className="h-6 w-6 text-muted-foreground rounded-full" />
                           </div>
                           <div className="flex flex-wrap gap-3">
-                            {selectedImage.borderRadius}px
+                            {selectedImage?.borderRadius}px
                             <Slider
-                              value={[selectedImage.borderRadius]}
+                              value={[selectedImage?.borderRadius]}
                               onValueChange={(e) => {
                                 updateImageStyle(selectedImageId, {
                                   borderRadius: e[0],
@@ -420,10 +387,10 @@ const RightPanel = memo(() => {
                             <h4 className="text-lg font-medium">Opacity</h4>
                             <Blend className="h-6 w-6 text-muted-foreground" />
                           </div>
-                            {selectedImage.opacity}px
+                          {selectedImage?.opacity}px
                           <div className="flex items-center space-x-6">
                             <Slider
-                              value={[selectedImage.opacity]}
+                              value={[selectedImage?.opacity]}
                               onValueChange={(e) => {
                                 updateImageStyle(selectedImageId, {
                                   opacity: e[0],
@@ -435,15 +402,135 @@ const RightPanel = memo(() => {
                             />
                           </div>
                         </div>
+
+                        {/* Grayscale Control */}
+                        <div>
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-lg font-medium">Grayscale</h4>
+                              <CircleOff className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                            <Switch
+                              checked={showControls.grayScale}
+                              onCheckedChange={() => toggleControl("grayScale")}
+                            />
+                          </div>
+                          {showControls.grayScale && (
+                            <div className="flex flex-wrap gap-3">
+                              <span>{selectedImage?.grayScaleValue || 0}%</span>
+                              <Slider
+                                value={[selectedImage?.grayScaleValue || 0]}
+                                onValueChange={(e) => {
+                                  updateImageStyle(selectedImageId, {
+                                    grayScale: true,
+                                    grayScaleValue: e[0],
+                                  });
+                                }}
+                                max={100}
+                                step={1}
+                                className="w-full"
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Blur Control */}
+                        <div>
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-lg font-medium">Blur</h4>
+                              <Blend className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                            <Switch checked={showControls.blur} onCheckedChange={() => toggleControl("blur")} />
+                          </div>
+                          {showControls.blur && (
+                            <div className="flex flex-wrap gap-3">
+                              <span>{selectedImage?.blurValue || 0}px</span>
+                              <Slider
+                                value={[selectedImage?.blurValue || 0]}
+                                onValueChange={(e) => {
+                                  updateImageStyle(selectedImageId, {
+                                    blur: true,
+                                    blurValue: e[0],
+                                  });
+                                }}
+                                max={10}
+                                step={0.1}
+                                className="w-full"
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Contrast Control */}
+                        <div>
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-lg font-medium">Contrast</h4>
+                              <Contrast className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                            <Switch checked={showControls.contrast} onCheckedChange={() => toggleControl("contrast")} />
+                          </div>
+                          {showControls.contrast && (
+                            <div className="flex flex-wrap gap-3">
+                              <span>{selectedImage?.contrastValue || 1}x</span>
+                              <Slider
+                                value={[selectedImage?.contrastValue || 1]}
+                                onValueChange={(e) => {
+                                  updateImageStyle(selectedImageId, {
+                                    contrast: true,
+                                    contrastValue: e[0],
+                                  });
+                                }}
+                                min={0}
+                                max={2}
+                                step={0.1}
+                                className="w-full"
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Brightness Control */}
+                        <div>
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-lg font-medium">Brightness</h4>
+                              <Sun className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                            <Switch
+                              checked={showControls.brightness}
+                              onCheckedChange={() => toggleControl("brightness")}
+                            />
+                          </div>
+                          {showControls.brightness && (
+                            <div className="flex flex-wrap gap-3">
+                              <span>{selectedImage?.brightnessValue || 1}x</span>
+                              <Slider
+                                value={[selectedImage?.brightnessValue || 1]}
+                                onValueChange={(e) => {
+                                  updateImageStyle(selectedImageId, {
+                                    brightness: true,
+                                    brightnessValue: e[0],
+                                  });
+                                }}
+                                min={0}
+                                max={2}
+                                step={0.1}
+                                className="w-full"
+                              />
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </DrawerContent>
-                </Drawer>
+                  </div>
+                </>
               )}
-            </>
-          )}
-        </div>
-      </TooltipProvider>
+            </SheetDescription>
+          </SheetHeader>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 });
@@ -453,21 +540,23 @@ RightPanel.displayName = "RightPanel";
 
 const MenuButton = memo(({ icon, tooltip, onClick }) => {
   return (
-    <Tooltip delayDuration={0}>
-      <TooltipTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="w-12 h-12 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
-          onClick={onClick}
-        >
-          {icon}
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent side="left" className="bg-background relative -top-4 border border-border">
-        <p className="text-sm font-medium">{tooltip}</p>
-      </TooltipContent>
-    </Tooltip>
+    <TooltipProvider className="">
+      <Tooltip delayDuration={0}>
+        <TooltipTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            className="w-12 h-12 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
+            onClick={onClick}
+          >
+            {icon}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="left" className="bg-background border !border-gray-700 relative left-2">
+          <p className="text-sm font-medium">{tooltip}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 });
 MenuButton.displayName = "MenuButton";

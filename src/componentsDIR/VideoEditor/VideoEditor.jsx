@@ -161,6 +161,7 @@ const VideoEditor = () => {
         ".right-panel",
         ".right-panel-menu",
         ".image-item",
+        ".text-item",
       ];
 
       if (ignoredElements.some((selector) => e.target.closest(selector))) {
@@ -168,8 +169,8 @@ const VideoEditor = () => {
       }
 
       setIsVideoSelected(null);
-      // setSelectedText(null)
-      // setSelectedImage(null)
+      setSelectedText(null);
+      setSelectedImage(null);
       setOpenMenu(null);
       setTargets([]);
     };
@@ -222,6 +223,8 @@ const VideoEditor = () => {
                         <div
                           onClick={(e) => {
                             e.stopPropagation();
+                            setSelectedText(null);
+                            setSelectedImage(null);
                             setCurrentVideoId(item.id);
                             setIsVideoSelected(item.id);
                           }}
@@ -271,6 +274,8 @@ const VideoEditor = () => {
                           <div
                             onClick={(e) => {
                               e.stopPropagation();
+                              setIsVideoSelected(null);
+                              setSelectedImage(null);
                               setSelectedText(item.id);
                               setTargets([e.currentTarget]);
                             }}
@@ -325,14 +330,15 @@ const VideoEditor = () => {
                             className="image-item"
                             onClick={(e) => {
                               e.stopPropagation();
+                              setIsVideoSelected(null);
+                              setSelectedText(null);
                               setSelectedImage(item.id);
-                              setTargets([e.currentTarget]); // Changed from e.target to e.currentTarget
+                              setTargets([e.currentTarget]);
                             }}
                           >
                             <img
                               src={item.src}
                               draggable="false"
-                              
                               style={{
                                 width: "100%",
                                 height: "100%",
@@ -340,6 +346,12 @@ const VideoEditor = () => {
                                 cursor: "pointer",
                                 borderRadius: `${item.borderRadius}px`,
                                 userSelect: "none",
+                                filter: `
+                                grayscale(${item.grayScale ? item.grayScaleValue + "%" : "0%"}) 
+                                blur(${item.blur ? item.blurValue + "px" : "0px"}) 
+                                contrast(${item.contrast ? item.contrastValue : "1"}) 
+                                brightness(${item.brightness ? item.brightnessValue : "1"})
+                              `
                               }}
                             />
                           </div>
@@ -445,7 +457,7 @@ const VideoEditor = () => {
                           updateVideosCords(target.dataset.id, {
                             width: newWidth,
                             height: newHeight,
-                            x: left, 
+                            x: left,
                             y: top,
                           });
                         } else {
@@ -458,7 +470,7 @@ const VideoEditor = () => {
                           updateVideosCords(target.dataset.id, {
                             width: width,
                             height: height,
-                            x: left, 
+                            x: left,
                             y: top,
                           });
                         }

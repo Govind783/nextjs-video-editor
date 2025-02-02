@@ -128,3 +128,23 @@ body {
 .videoButtonRightPanel {
   pointer-events: auto;
 }
+
+.noScrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* Hide scrollbar for Chrome, Safari, and Opera */
+.noScrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for Internet Explorer and Edge */
+.noScrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+/* Hide scrollbar for Firefox */
+.noScrollbar {
+  scrollbar-width: none; /* Firefox */
+}

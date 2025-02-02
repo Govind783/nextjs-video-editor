@@ -402,6 +402,14 @@ export const useVideoStore = create((set, get) => ({
       endTime: 20,
       duration: 20,
       opacity: 100,
+      grayScale: false,
+      grayScaleValue: 0,
+      blur: false,
+      blurValue: 0,
+      contrast: false,
+      contrastValue: 0,
+      brightness: false,
+      brightnessValue: 0
     };
 
     set((state) => ({

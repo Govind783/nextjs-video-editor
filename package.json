@@ -12,7 +12,7 @@
     "@interactify/infinite-viewer": "^0.0.2",
     "@interactify/moveable": "^0.1.0",
     "@interactify/selection": "^0.1.0",
-    "@radix-ui/react-dialog": "^1.1.4",
+    "@radix-ui/react-dialog": "^1.1.5",
     "@radix-ui/react-label": "^2.1.1",
     "@radix-ui/react-menubar": "^1.1.4",
     "@radix-ui/react-progress": "^1.1.1",
