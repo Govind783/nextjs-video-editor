@@ -8,29 +8,6 @@ import Ruler from "./Ruler";
 import Playhead from "./TimeStampThumbnails";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
 
-const colors = [
-  "#0d1117",
-  "#121620",
-  "#161b2a",
-  "#1a2033",
-  "#1e253d",
-  "#222a46",
-  "#262f50",
-  "#2a3459",
-  "#2e3963",
-  "#323e6c",
-  "#364376",
-  "#3a487f",
-  "#3e4d89",
-  "#425292",
-  "#46579c",
-  "#4a5ca5",
-  "#4e61af",
-  "#5266b8",
-  "#566bc2",
-  "#5a70cb",
-];
-
 const TIMELINE_OFFSET_CANVAS_LEFT = 10;
 const TIMELINE_OFFSET_RIGHT = 40;
 const FPS = 60;
@@ -59,6 +36,7 @@ const TimeLineIndex = () => {
   const selectedTextId = useVideoStore((state) => state.selectedTextId);
   const updateVideoTimes = useVideoStore((state) => state.updateVideoTimes);
   const textRegionsRef = useRef([]);
+  const audioRegionsRef = useRef([]);
   const setTextIsDragging = useVideoStore((state) => state.setTextIsDragging);
   const dragStateRef = useRef({
     isDragging: true,
@@ -70,6 +48,9 @@ const TimeLineIndex = () => {
   const setSelectedImage = useVideoStore((state) => state.setSelectedImage);
   const imageRegionsRef = useRef([]);
   const updateImagesTime = useVideoStore((state) => state.updateImagesTime);
+  const audios = useVideoStore((state) => state.audios);
+  const selectedAudioID = useVideoStore((state) => state.selectedAudioID);
+  const setSelectedAudioHanlder = useVideoStore((state) => state.setSelectedAudioHanlder);
 
   useEffect(() => {
     let maxDuartion = 0;
@@ -113,6 +94,7 @@ const TimeLineIndex = () => {
     const videoHeight = 50;
     const textHeight = 30;
     const imageHeight = 30;
+    const audioHeight = 30;
     const spacing = 15;
     const baseOffset = 50;
 
@@ -129,19 +111,22 @@ const TimeLineIndex = () => {
           baseOffset +
           35
         );
+      case "audio":
+        return (
+          videos.length * (videoHeight + spacing) +
+          texts.length * (textHeight + spacing) +
+          images.length * (imageHeight + spacing) +
+          index * (audioHeight + spacing) +
+          baseOffset +
+          35
+        );
       default:
         return 0;
     }
   };
 
-  const getCalculatedHeight = (videos, texts, images) => {
-    return Math.max(
-      230,
-      videos.length * 60 + 
-        texts.length * 45 + 
-        images.length * 45 + 
-        60 
-    );
+  const getCalculatedHeight = () => {
+    return Math.max(230, videos.length * 60 + texts.length * 45 + images.length * 45 + audios.length * 45 + 60);
   };
 
   useEffect(() => {
@@ -150,7 +135,7 @@ const TimeLineIndex = () => {
     if (!canvas || !ctx) return;
 
     const dpr = window.devicePixelRatio || 1;
-    const calculatedHeight = getCalculatedHeight(videos, texts, images) + 20;
+    const calculatedHeight = getCalculatedHeight() + 20;
     canvas.width = canvasWidth * dpr;
     canvas.height = calculatedHeight * dpr;
 
@@ -158,7 +143,6 @@ const TimeLineIndex = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     videoRegions.current = [];
 
-    // video rectangle onm time TL
     videos.forEach((video, index) => {
       const isShortVideo = video.originalDuration <= 15;
       const handleWidth = isShortVideo ? 12 : 16;
@@ -182,7 +166,7 @@ const TimeLineIndex = () => {
         },
       });
 
-      ctx.fillStyle = colors[index % colors.length];
+      ctx.fillStyle = "black";
       ctx.beginPath();
       ctx.roundRect(startX, y, width, height, 4);
       ctx.fill();
@@ -370,11 +354,79 @@ const TimeLineIndex = () => {
       ctx.textBaseline = "middle";
       ctx.fillText(`Image ${index + 1}`, startX + 10, y + height / 2);
     });
-  }, [videos, scale.zoom, isVideoSelected, canvasWidth, texts, selectedTextId, images, selectedImageId]);
 
-  useEffect(() => {
-    console.log(texts);
-  }, [texts]);
+    audioRegionsRef.current = [];
+    audios.forEach((audio, index) => {
+      const startX = audio.startTime * FPS * scale.zoom * 60 + 6;
+      // const width = (audio.endTime - audio.startTime) * FPS * scale.zoom * 60;
+      const width = ((audio.endTime - audio.startTime) * audio.speed) * FPS * scale.zoom * 60;
+      const height = 30;
+      const y = getYPosition("audio", index);
+
+      audioRegionsRef.current.push({
+        id: audio.id,
+        bounds: {
+          x: startX,
+          y,
+          width,
+          height,
+        },
+      });
+
+      ctx.beginPath();
+      ctx.fillStyle = "black"; // Dark gray color for audio
+      ctx.roundRect(startX, y, width, height, 4);
+      ctx.fill();
+      ctx.closePath();
+
+      ctx.beginPath();
+      ctx.strokeStyle = audio.id === selectedAudioID ? "white" : "#425292";
+      ctx.lineWidth = 1;
+      ctx.roundRect(startX, y, width, height, 4);
+      ctx.stroke();
+      ctx.closePath();
+
+      const handleWidth = 12;
+      ctx.beginPath();
+      ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+      ctx.roundRect(startX + width - handleWidth - 10, y, handleWidth, height, [0, 4, 4, 0]);
+      ctx.fill();
+      ctx.closePath();
+
+      const rightArrowX = startX + width - handleWidth - 11;
+      const arrowLineLength = 8;
+      const arrowSize = 4;
+
+      ctx.beginPath();
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+      ctx.lineWidth = 1;
+
+      ctx.moveTo(rightArrowX - 5, y + height / 2);
+      ctx.lineTo(rightArrowX + arrowLineLength, y + height / 2);
+      ctx.moveTo(rightArrowX + arrowLineLength, y + height / 2);
+      ctx.lineTo(rightArrowX + (arrowLineLength - 5), y + height / 2 - arrowSize);
+      ctx.moveTo(rightArrowX + arrowLineLength, y + height / 2);
+      ctx.lineTo(rightArrowX + (arrowLineLength - 5), y + height / 2 + arrowSize);
+      ctx.stroke();
+      ctx.closePath();
+
+      ctx.fillStyle = "#999";
+      ctx.font = "12px sans-serif";
+      ctx.textBaseline = "middle";
+      ctx.fillText(`Audio ${index + 1}`, startX + 10, y + height / 2);
+    });
+  }, [
+    videos,
+    scale.zoom,
+    isVideoSelected,
+    canvasWidth,
+    texts,
+    selectedTextId,
+    images,
+    selectedImageId,
+    selectedAudioID,
+    audios,
+  ]);
 
   const handleCanvasClick = useCallback(
     (e) => {
@@ -398,6 +450,7 @@ const TimeLineIndex = () => {
         setIsVideoSelected(clickedRegion.id);
         setSelectedText(null);
         setSelectedImage(null);
+        setSelectedAudioHanlder(null);
         return;
       }
 
@@ -413,7 +466,8 @@ const TimeLineIndex = () => {
         setSelectedText(clickedTextRegion.id);
         setIsVideoSelected(null);
         setSelectedImage(null);
-        return; 
+        setSelectedAudioHanlder(null);
+        return;
       }
 
       const clickedImageRegion = imageRegionsRef.current.find(
@@ -428,13 +482,30 @@ const TimeLineIndex = () => {
         setSelectedImage(clickedImageRegion.id);
         setSelectedText(null);
         setIsVideoSelected(null);
-      } else {
+        setSelectedAudioHanlder(null);
+      }
+      const clickedAudioRegion = audioRegionsRef.current.find(
+        (region) =>
+          x >= region.bounds.x &&
+          x <= region.bounds.x + region.bounds.width &&
+          y >= region.bounds.y &&
+          y <= region.bounds.y + region.bounds.height
+      );
+
+      if (clickedAudioRegion) {
+        setSelectedAudioHanlder(clickedAudioRegion.id);
         setSelectedImage(null);
         setSelectedText(null);
         setIsVideoSelected(null);
+        return;
       }
+
+      setSelectedImage(null);
+      setSelectedText(null);
+      setIsVideoSelected(null);
+      setSelectedAudioHanlder(null);
     },
-    [scrollLeft, videos.length, texts.length, images.length]
+    [scrollLeft, videos.length, texts.length, images.length, audios.length]
   );
 
   const handleMouseUp = useCallback(() => {
@@ -707,13 +778,13 @@ const TimeLineIndex = () => {
         <div className="relative w-10 flex-none" />
         <div
           style={{
-            height: getCalculatedHeight(videos, texts, images) + 20,
+            height: getCalculatedHeight() + 20,
           }}
           className="relative h-fit flex-1"
         >
           <div
             style={{
-              height: getCalculatedHeight(videos, texts, images) + 20
+              height: getCalculatedHeight() + 20,
             }}
             className="absolute top-0 w-full"
             ref={containerRef}
@@ -727,7 +798,7 @@ const TimeLineIndex = () => {
                 top: 0,
                 left: TIMELINE_OFFSET_CANVAS_LEFT,
                 width: `${canvasWidth}px`,
-                height: getCalculatedHeight(videos, texts, images) + 20,
+                height: getCalculatedHeight() + 20,
                 willChange: "transform",
                 zIndex: 2,
                 pointerEvents: "all",
@@ -742,7 +813,7 @@ const TimeLineIndex = () => {
               position: "absolute",
               width: "calc(100vw - 40px)",
               height: "20px",
-              marginTop: getCalculatedHeight(videos, texts, images) + 20,
+              marginTop: getCalculatedHeight() + 20,
             }}
             className="ScrollAreaRootH z-[3]"
           >

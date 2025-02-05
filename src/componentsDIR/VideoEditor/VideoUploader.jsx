@@ -115,7 +115,7 @@ const VideoUploader = memo(() => {
             Unleash your creativity with our powerful, free, and open-source video editing platform.
           </p>
           <div className="flex flex-wrap justify-center gap-4 pt-4">
-            <a className="w-full" href="https://github.com/Govind783/nextjs-video-editor" target="_blank">
+            <a className="" href="https://github.com/Govind783/nextjs-video-editor" target="_blank">
               <Button variant="outline" className="border-zinc-700 hover:bg-zinc-900">
                 <Code className="w-4 h-4 mr-2" />
                 View on GitHub
@@ -128,7 +128,7 @@ const VideoUploader = memo(() => {
             <input type="file" accept="video/*" className="hidden" ref={fileInputRef} onChange={handleUpload} />
             <Button
               variant="outline"
-              className="w-full h-48 border-dashed border-2 border-zinc-800 bg-zinc-950 hover:!bg-gray-900 hover:border-zinc-700 transition-all duration-300 rounded-lg flex flex-col items-center justify-center space-y-2"
+              className="w-full h-48 border-dashed border-2 border-zinc-800 hover:!bg-inherit !bg-black hover:!border-zinc-200 transition-all duration-300 rounded-lg flex flex-col items-center justify-center space-y-2"
             >
               <Upload className="!w-8 !h-8" />
               <span className="font-medium">Upload Your Video</span>
@@ -141,7 +141,7 @@ const VideoUploader = memo(() => {
           </div>
 
           <Button onClick={handleDemoPreview} disabled={isLoadingForDemoVideo} className="mt-4 w-full">
-            Try with Demo Video {isLoadingForDemoVideo && <Loader />}
+            Try Editor With Demo Video {isLoadingForDemoVideo && <Loader />}
           </Button>
         </div>
       </div>

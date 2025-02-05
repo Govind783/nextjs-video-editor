@@ -88,6 +88,7 @@ const Header = memo(() => {
 
   const handlePlayPause = () => {
     const videoElements = document.querySelectorAll("video");
+    const audioElements = document.querySelectorAll("audio");
     const shouldPlay = !isVideoPlaying;
     // const maxDuration = useVideoStore.getState().duration;
     videoElements.forEach((videoEl) => {
@@ -97,6 +98,16 @@ const Header = memo(() => {
         }
       } else {
         videoEl.pause();
+      }
+    });
+
+    audioElements.forEach((audioEL) => {
+      if (shouldPlay) {
+        if (audioEL.currentTime < audioEL.duration) {
+          audioEL.play();
+        }
+      } else {
+        audioEL.pause();
       }
     });
 

@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, memo, useCallback } from "react";
 import { useVideoStore } from "@/State/store";
-import { findVideoAndUpdatTime } from "@/helpers/videoFinder";
+import { findAudioInDOM, findVideoAndUpdatTime } from "@/helpers/videoFinder";
 
 const FPS = 60;
 
@@ -48,6 +48,8 @@ const PlayheadPosition = memo(({ scrollLeft }) => {
   const [localPosition, setLocalPosition] = useState(0);
   const [initialClientX, setInitialClientX] = useState(0);
   const videos = useVideoStore((state) => state.videos);
+  const audios = useVideoStore((state) => state.audios);
+  const isVideoPlaying = useVideoStore((state) => state.isVideoPlaying);
 
   const handlePositionChange = useCallback(
     (newPosition) => {
@@ -73,7 +75,7 @@ const PlayheadPosition = memo(({ scrollLeft }) => {
         // impt, you drag the playhead, it updates the video's currentTime, this is the key line  playerRef.currentTime = time; and since ur updating the player ref over here
         //         // it updates the player ref in the zustand store also
         //         // and this gives u that effeect that ohh as u fast forward tumbnails are generated in real time, but thats not the case, since the video is fully loaded in momeory (not the best way to do this though)
-        //         // since the video sits on client side in memory, as u drag and forward the pin, the browser automatically changes the video time frames
+        //         // since the video sits on client side in memory, as u drag and forward the pin, the browser automatically changes the video time frames that is modifying the current time of the html video EL
         e.preventDefault();
         const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
         const delta = clientX - initialClientX;
@@ -82,23 +84,30 @@ const PlayheadPosition = memo(({ scrollLeft }) => {
         const time = (newPosition + scrollLeft) / (FPS * scale.zoom * 60);
 
         // only update if we're within valid bounds for ANY video
-        const isValidTime = videos.some((video) => time <= video.duration);
-
-        if (isValidTime) {
+        const targetVideo = videos.filter((v) => time <= v.duration);
+        if (Array.isArray(targetVideo) && targetVideo.length > 0) {
           setLocalPosition(newPosition);
-          const targetVideo = videos
-            .filter((v) => time <= v.duration)          
-            if(Array.isArray(targetVideo) && targetVideo.length > 0){
-              const videoFinder = findVideoAndUpdatTime()
-              targetVideo.forEach((video) => {
-                const individualVideo = videoFinder(video.id)
-                individualVideo.currentTime = time * video.speed;
-              })
-            }
+          const videoFinder = findVideoAndUpdatTime();
+          targetVideo.forEach((video) => {
+            const individualVideo = videoFinder(video.id);
+            individualVideo.currentTime = time * video.speed;
+          });
+        }
+
+        const specificAudios = audios.filter((a) => a.duration >= time);
+        if (Array.isArray(specificAudios) && specificAudios.length > 0) {
+          const AudioElFinderInDOM = findAudioInDOM();
+
+          specificAudios.forEach((audioItem) => {
+            const individualAudioEl = AudioElFinderInDOM(audioItem.id);
+            if (!individualAudioEl) return;
+            individualAudioEl.currentTime = time * audioItem.speed;
+            if (individualAudioEl.paused && isVideoPlaying) individualAudioEl.play();
+          });
         }
       }
     },
-    [isDragging, initialClientX, dragStartPosition, scrollLeft, scale.zoom, playerRef, videos]
+    [isDragging, initialClientX, dragStartPosition, scrollLeft, scale.zoom, playerRef, videos, audios]
   );
 
   const handleMouseUp = useCallback(() => {

@@ -6,7 +6,20 @@ import { HexColorPicker } from "react-colorful";
 import { Separator } from "@/components/ui/separator";
 import { memo, useCallback, useEffect, useState } from "react";
 import { useVideoStore } from "@/State/store";
-import { Blend, Bold, Circle, CircleOff, Contrast, Image, Sun, Type, Underline, Video, Volume2 } from "lucide-react";
+import {
+  Blend,
+  Bold,
+  Circle,
+  CircleOff,
+  Contrast,
+  Image,
+  Music,
+  Sun,
+  Type,
+  Underline,
+  Video,
+  Volume2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
@@ -18,16 +31,20 @@ const RightPanel = memo(() => {
   const updateVideoVolume = useVideoStore((state) => state.updateVideoVolume);
   const texts = useVideoStore((state) => state.texts);
   const selectedImageId = useVideoStore((state) => state.selectedImageId);
-  const updateImageStyle = useVideoStore((state) => state.updateImageStyle);
+  const updateImageStyle = useVideoStore((state) => state.updateImageStyle)
+  const selectedAudioID = useVideoStore((state) => state.selectedAudioID);
 
   const [isTextDrawerOpen, setIsTextDrawerOpen] = useState(false);
   const [isVideoDrawerOpen, setIsVideoDrawerOpen] = useState(false);
   const [isImagesDrawerOpen, setIsImagesDrawerOpen] = useState(false);
+  const [isAudiosDrawerOpen, setIsAudiosDrawerOpen] = useState(false);
 
   // Get current text and video states
   const selectedText = useVideoStore((state) => state.texts.find((t) => t.id === selectedTextId));
   const selectedVideo = useVideoStore((state) => state.videos.find((v) => v.id === selectedVideoId));
   const selectedImage = useVideoStore((state) => state.images.find((i) => i.id === selectedImageId));
+  
+  const selectedAudioObjectBasedOnID = useVideoStore((state) => state.audios.find((av) => av.id === selectedAudioID))
 
   // Initialize states from store values
   const [showBg, setShowBg] = useState(selectedText?.backgroundColor !== undefined);
@@ -39,6 +56,10 @@ const RightPanel = memo(() => {
     contrast: false,
     brightness: false,
   });
+  const audios = useVideoStore((state) => state.audios);
+  
+  const updateAudioSpeed = useVideoStore((state) => state.updateAudioSpeed);
+  const updateAudioVolume = useVideoStore((state) => state.updateAudioVolume);
 
   useEffect(() => {
     if (selectedText) {
@@ -53,7 +74,8 @@ const RightPanel = memo(() => {
     setIsTextDrawerOpen((selectedTextId && isTextDrawerOpen) ?? false);
     setIsVideoDrawerOpen((selectedVideo && isVideoDrawerOpen) ?? false);
     setIsImagesDrawerOpen((selectedImageId && isImagesDrawerOpen) ?? false);
-  }, [selectedTextId, selectedVideo, selectedImageId]);
+    setIsAudiosDrawerOpen((selectedAudioID && isAudiosDrawerOpen) ?? false)
+  }, [selectedTextId, selectedVideo, selectedImageId, selectedAudioID]);
 
   // Video control handlers
   const handleSpeedChange = useCallback(
@@ -166,12 +188,32 @@ const RightPanel = memo(() => {
     });
   };
 
+  // Create handlers like the video ones:
+  const handleAudioSpeedChange = useCallback(
+    (speed) => {
+      if (selectedAudioID) {
+        updateAudioSpeed(selectedAudioID, speed);
+      }
+    },
+    [selectedAudioID, updateAudioSpeed]
+  );
 
-  if (!(selectedTextId || selectedVideoId || selectedImageId)) return null;
+  const handleAudioVolumeChange = useCallback(
+    (value) => {
+      if (selectedAudioID) {
+        updateAudioVolume(selectedAudioID, value[0]);
+      }
+    },
+    [selectedAudioID, updateAudioVolume]
+  );
+
+
+
+  if (!(selectedTextId || selectedVideoId || selectedImageId || selectedAudioID)) return null;
 
   return (
     <div className="">
-      <Sheet open={isTextDrawerOpen || isVideoDrawerOpen || isImagesDrawerOpen} modal={false}>
+      <Sheet open={isTextDrawerOpen || isVideoDrawerOpen || isImagesDrawerOpen || isAudiosDrawerOpen} modal={false}>
         <SheetTrigger className="fixed left-4 z-10 top-4 flex flex-col gap-4">
           {selectedVideoId && (
             <div className="">
@@ -198,8 +240,21 @@ const RightPanel = memo(() => {
               tooltip={"Text Settings"}
             />
           )}
+          {selectedAudioID && (
+            <MenuButton
+              icon={<Music className="h-6 w-6" />}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsAudiosDrawerOpen(true); //
+              }}
+              tooltip={"Audio Settings"}
+            />
+          )}
         </SheetTrigger>
-        <SheetContent onClick={preventDrawerClose} className="h-[94vh] noScrollbar overflow-y-auto !p-[1.2rem] sm:max-w-[31rem] border-l-gray-600">
+        <SheetContent
+          onClick={preventDrawerClose}
+          className=" noScrollbar overflow-y-auto !p-[1.2rem] sm:max-w-[31rem] border-l-gray-600"
+        >
           <SheetHeader>
             <SheetTitle></SheetTitle>
             <SheetDescription className="">
@@ -521,6 +576,47 @@ const RightPanel = memo(() => {
                               />
                             </div>
                           )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+              {selectedAudioID && (
+                <>
+                  <p className="text-xl font-bold">Audio Settings</p>
+                  {/* <div>Adjust video playback settings here.</div> */}
+                  <div className=" pb-0 mt-5">
+                    <div className="space-y-10">
+                      <div>
+                        <h4 className="text-lg font-medium mb-4">Playback Speed</h4>
+                        <div className="flex flex-wrap gap-3">
+                          {[0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map((speed) => (
+                            <button
+                              key={speed}
+                              onClick={() => handleAudioSpeedChange(speed)}
+                              className={`px-4 py-2 border border-gray-700 text-sm font-medium rounded-full transition-colors ${
+                                speed === selectedAudioObjectBasedOnID?.speed
+                                  ? "bg-white text-black"
+                                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                              }`}
+                            >
+                              {speed}x
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-medium mb-4">Volume</h4>
+                        <div className="flex items-center space-x-6">
+                          <Volume2 className="h-6 w-6 text-muted-foreground" />
+                          <Slider
+                            value={[selectedAudioObjectBasedOnID?.volume || 11]}
+                            onValueChange={handleAudioVolumeChange}
+                            max={100}
+                            step={1}
+                            className="w-full"
+                          />
                         </div>
                       </div>
                     </div>

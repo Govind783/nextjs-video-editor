@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { v4 as uuidv4 } from "uuid";
 import { findVideoAndUpdatTime } from "@/helpers/videoFinder";
 
-const videoFinder = findVideoAndUpdatTime()
+const videoFinder = findVideoAndUpdatTime();
 
 export const useVideoStore = create((set, get) => ({
   videos: [],
@@ -183,9 +183,20 @@ export const useVideoStore = create((set, get) => ({
           speed: 1,
         };
       });
+
+      const newAudioElsReset = state.audios.map((a) => {
+        return {
+          ...a,
+          startTime: 0,
+          endTime: a.originalDuration,
+          duration: a.originalDuration,
+          speed: 1,
+        };
+      });
       return {
         videos: newVideos,
         duration: Math.max(...newVideos.map((i) => i.originalDuration)),
+        audios: newAudioElsReset,
       };
     });
   },
@@ -208,12 +219,23 @@ export const useVideoStore = create((set, get) => ({
         state.playerRef.currentTime = newTime * video.speed;
       } else if (state.videos.length > 1) {
         const validVideos = state.videos.filter((v) => v.duration > state.currentTime);
-        if (validVideos)
+        if (validVideos) {
           validVideos.forEach((vid) => {
-            const individualVideo = videoFinder(vid.id)
+            const individualVideo = videoFinder(vid.id);
             individualVideo.currentTime = newTime;
           });
+        }
       }
+      const audioElements = document.querySelectorAll("audio");
+      audioElements.forEach((audioEl) => {
+        if (state.currentTime < audioEl.duration) {
+          const audioObj = state.audios.find((a) => a.id === audioEl.dataset.id);
+          const speedMultiplier = audioObj ? audioObj.speed : 1;
+          audioEl.playbackRate = audioObj ? audioObj.speed : 1;
+          audioEl.currentTime = newTime * speedMultiplier;
+          if (audioEl.paused && state.isVideoPlaying) audioEl.play();
+        }
+      });
 
       return {
         currentTime: newTime,
@@ -229,18 +251,29 @@ export const useVideoStore = create((set, get) => ({
         state.playerRef.currentTime = newTime * video.speed;
       } else if (state.videos.length > 1) {
         const validVideos = state.videos.filter((v) => v.duration > state.currentTime);
-        if (validVideos)
+        if (validVideos) {
           validVideos.forEach((vid) => {
-            const individualVideo = videoFinder(vid.id)
+            const individualVideo = videoFinder(vid.id);
             individualVideo.currentTime = newTime;
           });
+        }
       }
-   
+
+      const audioElements = document.querySelectorAll("audio");
+
+      audioElements.forEach((audioEl) => {
+        const audioObj = state.audios.find((a) => a.id === audioEl.dataset.id);
+        const speedMultiplier = audioObj ? audioObj.speed : 1;
+        audioEl.playbackRate = audioObj ? audioObj.speed : 1;
+        audioEl.currentTime = newTime * speedMultiplier;
+        if (audioEl.paused && state.isVideoPlaying) audioEl.play();
+      });
+
       return {
         currentTime: newTime,
       };
     });
-   },
+  },
 
   deleteVideo: (ID) => {
     set((state) => {
@@ -409,7 +442,7 @@ export const useVideoStore = create((set, get) => ({
       contrast: false,
       contrastValue: 0,
       brightness: false,
-      brightnessValue: 0
+      brightnessValue: 0,
     };
 
     set((state) => ({
@@ -502,5 +535,77 @@ export const useVideoStore = create((set, get) => ({
         images: newImages,
       };
     });
+  },
+
+  audios: [],
+  selectedAudioID: "",
+  updateAudioSpeed: (id, newSpeed) =>
+    set((state) => {
+      const updatedAudios = state.audios.map((audio) => {
+        if (audio.id === id) {
+          const newDuration = audio.originalDuration / newSpeed;
+          const wasAtMax = audio.endTime === audio.duration;
+          const newEndTime = wasAtMax ? newDuration : Math.min(audio.endTime, newDuration);
+
+          return {
+            ...audio,
+            speed: newSpeed,
+            duration: newDuration,
+            endTime: newEndTime,
+          };
+        }
+        return audio;
+      });
+
+      const maxAudioDuration = Math.max(...updatedAudios.map((a) => a.endTime));
+      const maxTextDuration = Math.max(...state.texts.map((t) => t.endTime));
+
+      return {
+        audios: updatedAudios,
+        duration: Math.max(maxAudioDuration, maxTextDuration),
+      };
+    }),
+
+  updateAudioVolume: (id, volume) =>
+    set((state) => ({
+      audios: state.audios.map((a) => (a.id === id ? { ...a, volume } : a)),
+    })),
+
+  setSelectedAudioHanlder: (ID) => set({ selectedAudioID: ID }),
+
+  deleteSpecificAudio: (ID) => {
+    set((state) => {
+      return {
+        audios: state.audios.filter((i) => i.id !== ID),
+      };
+    });
+  },
+
+  addAudioOnTL: (audioData) => {
+    const maxDuration = 600; // 10 minutes
+
+    if (audioData.duration > maxDuration) {
+      return false;
+    }
+
+    const newAudioObject = {
+      id: uuidv4(),
+      src: audioData.src,
+      duration: audioData.duration,
+      originalDuration: audioData.duration,
+      startTime: 0,
+      endTime: audioData.duration,
+      playbackOffset: 0,
+      speed: 1,
+      volume: 100,
+      isMuted: false,
+      currentTime: 0,
+    };
+
+    set((state) => ({
+      audios: [...state.audios, newAudioObject],
+    }));
+
+    return true;
   },
 }));

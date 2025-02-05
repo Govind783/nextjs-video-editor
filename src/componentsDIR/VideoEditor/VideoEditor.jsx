@@ -8,6 +8,7 @@ import useZoom from "@/hooks/useZoom";
 import TimeLineIndex from "./timeline/TimeLineIndex";
 import LeftPanel from "./LeftPanel";
 import RightPanel from "./RightPanel";
+import { isObjectEmpty } from "@/helpers/videoFinder";
 
 const VideoEditor = () => {
   const viewerRef = useRef(null);
@@ -40,6 +41,10 @@ const VideoEditor = () => {
 
   const updateImageDimensions = useVideoStore((state) => state.updateImageDimensions);
   const updateImagePosition = useVideoStore((state) => state.updateImagePosition);
+  const audios = useVideoStore((state) => state.audios);
+  const selectedAudioID = useVideoStore((state) => state.selectedAudioID);
+  const audiosRefs = useRef({});
+  const setSelectedAudioHanlder = useVideoStore((state) => state.setSelectedAudioHanlder);
 
   useEffect(() => {
     if (currentVideoId && videoRefs.current[currentVideoId]) {
@@ -171,6 +176,7 @@ const VideoEditor = () => {
       setIsVideoSelected(null);
       setSelectedText(null);
       setSelectedImage(null);
+      setSelectedAudioHanlder(null);
       setOpenMenu(null);
       setTargets([]);
     };
@@ -191,6 +197,35 @@ const VideoEditor = () => {
       }
     });
   }, [videos]);
+
+  // useEffect(() => {
+  //   audios.forEach((audio) => {
+  //     const audioElement = audiosRefs.current[audio.id];
+  //     console.log(audioElement, 'audioElementaudioElement');
+      
+  //     if (audioElement) {
+  //       audioElement.playbackRate = audio.speed;
+  //       audioElement.volume = audio.volume / 100;
+  //       audioElement.currentTime = audioElement.currentTime / audio.speed
+  //     }
+  //   });
+  // }, [audios]);
+
+  useEffect(() => {
+    audios.forEach((audio) => {
+      const audioElement = audiosRefs.current[audio.id];
+      if (audioElement) {
+        // Only adjust currentTime if speed has changed
+        if (audioElement.playbackRate !== audio.speed) {
+          const oldSpeed = audioElement.playbackRate;
+          const newSpeed = audio.speed;
+          audioElement.currentTime = audioElement.currentTime * (oldSpeed / newSpeed);
+        }
+        audioElement.playbackRate = audio.speed;
+        audioElement.volume = audio.volume / 100;
+      }
+    });
+  }, [audios]);
 
   return (
     <div className="w-full h-full">
@@ -351,10 +386,29 @@ const VideoEditor = () => {
                                 blur(${item.blur ? item.blurValue + "px" : "0px"}) 
                                 contrast(${item.contrast ? item.contrastValue : "1"}) 
                                 brightness(${item.brightness ? item.brightnessValue : "1"})
-                              `
+                              `,
                               }}
                             />
                           </div>
+                        )
+                      );
+                    })}
+
+                    {audios.map((item) => {
+                      const effectiveCurrentTime = currentTime / item.speed;
+                      return (
+                        item.duration + 0.8 >= effectiveCurrentTime && (
+                          <audio
+                            ref={(el) => {
+                              if (el) {
+                                audiosRefs.current[item.id] = el;
+                              }
+                            }}
+                            key={item.id}
+                            data-id={item.id}
+                            className="hidden"
+                            src={item.src}
+                          ></audio>
                         )
                       );
                     })}
