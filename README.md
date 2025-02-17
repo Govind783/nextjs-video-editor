@@ -48,7 +48,7 @@ Adjust speed, volume, and trim points
 
 ### Image Editing
 Control size, position, and visual effects
-![Image modification panel](https://live.staticflickr.com/65535/54259749544_29bedf1e09_k.jpg)
+![Image modification panel](https://github.com/user-attachments/assets/fa2f94eb-3bbb-49d5-9454-d96c88fd2bd4)
 
 ---
 
